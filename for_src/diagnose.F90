@@ -156,7 +156,7 @@ subroutine diag_snap
    iret=nf_inq_dimlen(ncid, tdimid,ilen)
    iret=nf_inq_varid(ncid,'Time',timeid)
    ilen=ilen+1
-   iret= nf_put_vara_double(ncid,timeid,ilen,1,time)
+   iret= nf_put_vara_double(ncid,timeid,(/ilen/),(/1/),(/time/))
    
    iret=nf_inq_varid(ncid,'u',id)
    iret= nf_put_vara_double(ncid,id,(/istart(1),istart(2),istart(3),ilen/), &
@@ -262,19 +262,19 @@ subroutine init_snap_cdf
   zdim  = ncddef(ncid, 'z', nz, iret)
  
   Timedim = ncddef(ncid,'Time', nf_unlimited, iret)
-  timeid  = ncvdef (ncid,'Time', NF_DOUBLE,1,timedim,iret)
+  timeid  = ncvdef (ncid,'Time', NF_DOUBLE,1,(/timedim/),iret)
   iret = nf_put_att_text(ncid,timeid,'long_name',len_trim('time'),'time')
   iret = nf_put_att_text(ncid,timeid,'unit',len_trim('seconds'),'seconds')
   
-  id  = ncvdef (ncid,'x',NF_DOUBLE,1,xdim,iret)
+  id  = ncvdef (ncid,'x',NF_DOUBLE,1,(/xdim/),iret)
   iret = nf_put_att_text(ncid,id,'long_name',len_trim('x'),'x')
   iret = nf_put_att_text(ncid,id,'unit',len_trim('m'),'m')
   
-  id  = ncvdef (ncid,'y',NF_DOUBLE,1,ydim,iret)
+  id  = ncvdef (ncid,'y',NF_DOUBLE,1,(/ydim/),iret)
   iret = nf_put_att_text(ncid,id,'long_name',len_trim('y'),'y')
   iret = nf_put_att_text(ncid,id,'unit',len_trim('m'),'m')
   
-  id  = ncvdef (ncid,'z',NF_DOUBLE,1,zdim,iret)
+  id  = ncvdef (ncid,'z',NF_DOUBLE,1,(/zdim/),iret)
   iret = nf_put_att_text(ncid,id,'long_name',len_trim('z'),'z')
   iret = nf_put_att_text(ncid,id,'unit',len_trim('m'),'m')
   
@@ -312,19 +312,19 @@ subroutine init_snap_cdf
    x(i)=(i-1)*dx
   enddo 
   iret=nf_inq_varid(ncid,'x',id)
-  iret= nf_put_vara_double(ncid,id,1,nx,x)  
+  iret= nf_put_vara_double(ncid,id,(/1/),(/nx/),x)  
   
   do i=1,ny
    y(i)=(i-1)*dy
   enddo 
   iret=nf_inq_varid(ncid,'y',id)
-  iret= nf_put_vara_double(ncid,id,1,ny,y)  
+  iret= nf_put_vara_double(ncid,id,(/1/),(/ny/),y)  
   
   do i=1,nz
    z(i)=(i-1)*dz
   enddo 
   iret=nf_inq_varid(ncid,'z',id)
-  iret= nf_put_vara_double(ncid,id,1,nz,z)   
+  iret= nf_put_vara_double(ncid,id,(/1/),(/nz/),z)   
   
   iret= nf_close(ncid) 
   
