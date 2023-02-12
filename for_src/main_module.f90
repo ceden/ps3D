@@ -15,6 +15,11 @@ module main_module
   logical :: enable_nonlinear = .true.    
   logical :: enable_vertical_boundaries = .false.
   logical :: enable_AB_3_order = .false.
+  
+  logical :: enable_diag_balance        = .false.
+  logical :: enable_diag_balance_chunks = .false.
+  logical :: enable_diag_balance_filter = .false.
+  integer :: diag_balance_filter_width  = 3 
 !---------------------------------------------------------------------------------
 ! model parameter
 !---------------------------------------------------------------------------------

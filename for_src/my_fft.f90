@@ -89,12 +89,3 @@ subroutine my_fft_vert_mode(QP,QS,mode)
  enddo  
 end subroutine my_fft_vert_mode
 
-
-function hat_ksqr(k,dx)
- implicit none
- real*8, intent(in) :: k,dx
- real*8 :: hat_ksqr
- hat_ksqr = 2d0*(1d0-cos(k*dx))/dx**2
-end function hat_ksqr
-
-
