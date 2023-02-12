@@ -214,7 +214,7 @@ program main
    endif   
    call toc('diagnostics')
         
-   n = taum2; taum2 = tau; taum1 = tau; tau = n
+   n = taum2; taum2 = taum1; taum1 = tau; tau = n
    time = time + dt       
    itt = itt + 1 
    
