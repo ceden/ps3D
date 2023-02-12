@@ -1,1 +1,2052 @@
+\documentclass[12pt]{article} 
+\usepackage{natbib}
+\usepackage{a4wide}
+\usepackage{lineno}
+\usepackage{cancel}
 
+\newif\ifbuch
+\global\buchtrue
+\global\buchfalse
+
+\newif\ifdetail
+\global\detailfalse
+%\global\detailtrue
+
+\usepackage{color}
+\usepackage[pdftex]{graphicx}
+\usepackage[pdftex,colorlinks,
+                citecolor=darkgreen,linkcolor=darkblue,urlcolor=darkblue]{hyperref}
+\definecolor{darkgreen}{rgb}{0.1,0.4,0.1}
+\definecolor{darkblue}{rgb}{0.1,0.1,0.3}
+
+\usepackage{amssymb}
+
+\newcommand{\beq}  { \begin{eqnarray*} }
+\newcommand{\eeq}  { \end{eqnarray*}}
+\newcommand{\beeq}  { \begin{eqnarray*} }
+\newcommand{\eeeq}  { \end{eqnarray*}}
+\newcommand{\eq }  [1]{Eq.~(\ref{#1})}  % Eq. (#1)
+\newcommand{\sect}  [1]{Sec.~(\ref{#1})}  % Eq. (#1)
+\newcommand{\fig}  [1]{Fig.~\ref{#1}}   % Fig. #1
+\renewcommand{\v}[1]{{\mbox{\boldmath$ #1 $}}}  % Vektor durch Fettdruck
+\newcommand{\m}    [1]{{\bf  #1 }}              % Matrix in sans serif
+\newcommand{\gz}[1] {{{d #1} \over {dz}}}
+\newcommand{\pt}[1]{{\partial_t #1}}
+\newcommand{\ptt}[1]{{{\partial^2 #1} \over {\partial t^2}}}
+\newcommand{\pttx}[1]{{{\partial^3 #1} \over {\partial t^2 \partial x}}}
+\newcommand{\ptty}[1]{{{\partial^3 #1} \over {\partial t^2 \partial y}}}
+\newcommand{\pttt}[1]{{{\partial^3 #1} \over {\partial t^3}}}
+\newcommand{\ptx}[1]{{{\partial^2 #1} \over {\partial t \partial x}}}
+\newcommand{\pty}[1]{{{\partial^2 #1} \over {\partial t \partial y}}}
+\newcommand{\pz}[1]{{\partial_z #1}}
+\newcommand{\pzz}[1]{{\partial_{zz} #1}}
+\newcommand{\px}[1]{{\partial_x #1}}
+\newcommand{\py}[1]{{\partial_y #1}}
+\newcommand{\pxi}[1]{{\partial_i #1}}
+\newcommand{\pxj}[1]{{\partial_j #1}}
+\newcommand{\pxk}[1]{{\partial_k #1}}
+\newcommand{\pb}[1]{{{\partial #1} \over {\partial b}}}
+%\newcommand{\pxy}[1]{{{\partial^2 #1} \over {\partial x \partial y}}}
+\newcommand{\pxy}[1]{\partial_{xy} #1}
+\newcommand{\pyy}[1]{\partial_{yy} #1}
+\newcommand{\pxx}[1]{\partial_{xx} #1}
+\newcommand{\kx}{{\bf k} \times}
+\newcommand{\dt}[1]{{{d #1} \over {d t}}}
+\newcommand{\Dt}[1]{{{D #1} \over {D t}}}
+\newcommand{\Div}[1]{ \nabla \cdot #1 }
+\renewcommand{\div}[1]{ \nabla_{yz} \cdot #1 }
+\newcommand{\Bar}[1]{ \overline{ #1} }
+\newcommand{\rvec} [1]{
+    \raisebox{-1.5ex}{$\stackrel{\textstyle #1}{\neg}$} }% rotierter Vektor
+\newcommand{\nablq}   {\rvec\nabla}                    % rotated nabla operator
+\newcommand{\Vec}[1]{\left(\begin{array}{c} #1 \end{array}\right) }
+%\renewcommand{\mho}{\mathcal{W}}
+\newcommand{\pn}[1]{{{\partial #1} \over {\partial n}}}
+\newcommand{\pnn}[1]{{{\partial #1} \over {\partial m}}}
+\newcommand{\ps}[1]{{{\partial #1} \over {\partial s}}}
+
+\newcommand{\p}{{\partial}}
+\newcommand{\vn}{{\v \nabla}}
+\newcommand{\tl}{\tilde}
+\newcommand{\lk}{\left(}
+\newcommand{\rk}{\right)}
+
+\begin{document} 
+
+\section*{Documentation for pseudo-spectral 3D ocean model (ps3D)}
+
+\subsection*{Continuous equations}
+
+
+The Boussinesq equations are
+\beq
+ \p_t  u  &=& - \p_x p + \delta u ~~,~~\delta u =  + f v    - \v u \cdot \vn u  + A_h \vn^2_h u  + A_v \p_{zz} u  \\
+ \p_t v  &=&    - \p_y p  + \delta v ~~,~~\delta v = - f u  - \v u \cdot \vn v + A_h \vn^2_h v+ A_v \p_{zz} v
+ \\
+ \p_t w &=&  - \p_z p   + \delta w ~~,~~\delta w =   b - \v u \cdot \vn w + A_h \vn^2_h w+ A_v \p_{zz} w
+ \eeq
+plus frictional terms in the $\delta$ terms.  We solve them on a triple-periodic domain.
+ Note that a factor $\rho_0$ is absorbed in the pressure.
+ The continuity equation is given by
+\beq
+\p_x u + \p_y v  + \p_z w = 0
+\eeq
+We use a conservation equation for buoyancy $b$
+\beq
+  \p_t b  &=& - w N^2 + K_h \vn^2 b+ K_v \p_{zz} b - \v u \cdot \vn b
+ \eeq
+The constant stability frequency $N$ results from the stratification of the mean state.
+Kinetic and potential energy are $ (u^2 + v^2 + w^2) /2 $ and $ b^2/2 N^2 $.
+%\beq 
+ %(\p_t  + \v u \cdot \vn ) (u^2 + v^2 + w^2) /2 =  -  \vn \cdot \v u  p + w b + fric.
+% ~,~ (\p_t  + \v u \cdot \vn ) b^2/2 N^2 = - wb + mix.
+%eeq 
+ 
+\subsection*{Fully non-hydrostatic pressure}
+
+For fully non-hydrostatic conditions, we solve for the full pressure $p$.
+Taking the divergence of the momentum equation yields 
+\beq
+ \vn^2 p = \vn_h \cdot \delta \v u_h + \p_z \delta w
+\eeq
+which needs to be solved at each time step.
+Discrete version
+\beq
+  (\delta_x^-  \delta_x^+ + ... ) p_{i,j,k} &=&  f_{i,j,k}
+\eeq
+with the finite differencing operators
+\beq
+ \delta_x^+ h_{i,j} = (h_{i+1,j} - h_{i,j})/\Delta_x
+ ~,~ \delta_y^+ h_{i,j} = (h_{i,j+1} - h_{i,j})/\Delta_y
+  \\
+ \delta_x^- h_{i,j} = (h_{i,j} - h_{i-1,j})/\Delta_x
+ ~,~ \delta_y^- h_{i,j} = (h_{i,j} - h_{i,j-1})/\Delta_y
+ \eeq
+ The Fourier transform of the discrete  system becomes simple with the definitions 
+\beq
+  i \hat k_x^+(k_x)  =  \frac{ e^{ik_x  \Delta x  }  - 1  }{ \Delta x} \stackrel{\Delta x\to 0}{=}  i k_x 
+  ~~,~~ i \hat k_x^-(k_x) =  \frac{ 1- e^{-ik_x  \Delta x  }   }{ \Delta x }  \stackrel{\Delta x\to 0}{=} i k_x
+  \\
+  \hat 1_x^+(k_x) = \frac{ e^{ik_x  \Delta x  }  + 1  }{ 2}  \stackrel{\Delta x\to 0}{=} 1 
+  ~~,~~\hat 1_x^-(k_x) =      \frac{ e^{-ik_x  \Delta x  }  + 1 }{2}
+  \stackrel{\Delta x\to 0}{=} 1
+\eeq
+and similar for $\hat k_y^+$, $\hat k^-_y$, etc,
+with $ (\hat 1_x^+)^*  =  \hat 1_x^- $, $(\hat k_x^+)^* = \hat k_x^-$, $ \hat k_x^+(-k_x) =- \hat k_x^-(k_x) $
+and $ \hat 1_x^+(-k_x) =\hat 1_x^-(k_x) $.
+\beq
+  -( \hat k_x^+(k_x)   \hat k_x^-(k_x)   + ... ) \hat p_{i,j,k} &=&  \hat f_{i,j,k}
+\eeq
+
+\subsection*{Scaled equations}
+
+
+Introducing $L,H$ for vertical and horizontal scales, using  $T=1/f$  as time scale 
+which is appropriate for gravity waves, using for the scaling of buoyancy
+and pressure the hydrostatic and geostrophic balance, and the continuity
+equation for the scaling of $w$, we obtain
+\beq
+ \pt{\v u } + f \rvec{\v u}  +   \vn p =   
+  - Ro \lk \v u \cdot \vn \v u +  w \pz{} \v u \rk
+ ~~,~~
+    \pt{b}  + N^2  w    =  -Ro \lk  \v u \cdot \vn b  +  w \pz{} b \rk
+ \\
+   \delta^2 \pt w +   \pz p -  b =  - Ro \delta^2  \lk   \v u \cdot \vn w +  w \pz{} w \rk
+     \eeq
+ with the diagnostic relation  $ \vn \cdot \v u +  \pz w =0$, and  
+with the Rossby number $Ro = U/(L\Omega)$ and $N = Ro/Fr=L_r/L$ where $Fr$ denotes
+the Froude number  $Fr = U/(\tl NH)$ and $L_r = \tl NH/\Omega$ the Rossby radius.
+$f=1$ was kept for reference, and
+ with the small aspect ratio $\delta = H/L$.
+ The scaled  background stratification  $\bar b(z)$ is given by $N^2 z/Ro$.
+ Kinetic and potential energy are $\v u^2/2 + \delta^2  w^2/2$ and 
+ $b^2/2 N^2$.
+ \ifdetail
+ \beq
+  \p_t \v u^2/2 + Ro \lk \v u \cdot \vn  +  w \pz{} \rk \v u^2/2 + \vn \cdot \v u p =  fric.
+  \\
+   \delta^2 \pt w^2/2  +  w  \pz p -  w b =  - Ro \delta^2  \lk   \v u \cdot \vn  +  w \pz{} \rk w^2/2
+   \\
+     \pt{b^2/2}  + N^2  b w    =  -Ro \lk  \v u \cdot \vn   +  w \pz{}  \rk b^2/2
+ \eeq
+ \fi
+ 
+ 
+ \ifdetail
+ Scale 
+\beq
+ \vn \cdot \v u + \frac{W L}{UH}  \pz w = 0
+\\
+\frac{1}{T \Omega}  \pt{\v u } + f \rvec{\v u}  +  \frac{\Delta_y P}{L \Omega U} \vn p =   
+    - Ro \lk \v u \cdot \vn \v u +  \frac{W  L }{H U }  w \pz{} \v u \rk  - \frac{A_h }{L^4 \Omega}  \vn^4 \v u
+  \\
+  \frac{W}{ T B}  \pt w +   \frac{\Delta_z P }{ B H}   \pz p -  b =  - \frac{UW}{BL}   \v u \cdot \vn w - \frac{W^2}{BH}  w \pz{} w
+   \\
+   %  \pt{b}  + \frac{W T N^2}{\Delta_t B}  w   =  \frac{U T}{L}  
+  %   \lk  -    \frac{\Delta_y B} {\Delta_t B} \v u \cdot \vn b  - \frac{WL}{H U}  \frac{\Delta_z B}{\Delta_t B} w \pz{} b \rk
+ % \\
+   \pt{b}  +  \frac{W N^2 T }{\Delta_y B} w    =  
+    - \frac{U  T   }{L     } \lk  \v u \cdot \vn b   +  \frac{W   L }{  U  H   }   w \pz{} b \rk
+     \eeq
+with $Ro = U/(L\Omega)$ and $f=1$ for reference. 
+ Set $T=1/\Omega$, $W/U = H/L$, $B = \Delta_z P/H$ and $\Delta_y P=\Delta_z P = L \Omega U$
+and $\Delta_y B = B $ 
+\beq
+ \vn \cdot \v u +  \pz w = 0
+\\
+\pt{\v u } + f \rvec{\v u}  + \vn p =   
+    - Ro \lk \v u \cdot \vn \v u +  w \pz{} \v u \rk
+  \\
+ \delta^2  \pt w +    \pz p -  b =  - Ro  \delta^2   \v u \cdot \vn w -  Ro \delta^2  w \pz{} w
+ % \pz p = B b
+  \\
+   \pt{b}  +  \frac{L_r^2  }{ L^2 } w    =  
+    - Ro  \lk  \v u \cdot \vn b   +   w \pz{} b \rk
+     \eeq
+with Rossby radius  $L_r = N H/\Omega$  and $\delta = H/L$  and $Ro = U/L \Omega$
+
+
+
+Background stratification is $\bar b(z) = N^2 z$  and full buoyancy $\tl b = \bar b + b$ 
+and
+\beq
+  \bar b /B = N^2 z  H /  L \Omega U  =  N^2 z'  H^2  L  \Omega /  L^2  \Omega^2 U =     z'  L_r^2       /  (L^2  Ro )  
+\eeq
+
+\fi
+
+
+To solve for the pressure we first we write as 
+\beq
+ \p_t \v u = - \vn p + \dot{\v u} ~,~\delta^2 \p_t w = - \p_z p + \dot w 
+ %\\ ~\to~
+%0 =  \p_t \vn \cdot \v u  + \p_t \p_z w = - \vn^2  p + \vn \cdot \dot{\v u}  - \p_{zz} p /\delta^2 + \p_z \dot w/\delta^2 
+%\\
+~\to~\vn^2 p + \p_{zz} p /\delta^2  =   \vn \cdot \dot{\v u} + \p_z \dot w/\delta^2 
+\eeq 
+Then we   first
+time step without pressure gradient
+\beq
+  \v u^* = \v u^{n-1} + \Delta t  \dot{\v u}    
+  ~,~w^* = w^{n-1} + \Delta t / \delta^2  \dot w
+\eeq  
+Then we 
+ take divergence for pressure equation 
+ \beq
+\vn \cdot \v u^* + \p_z w^* = \Delta t \vn \cdot  \dot{\v u}   + \Delta t / \delta^2  \p_{z} \dot w  = \Delta t ( \vn^2 p + \p_{zz} p /\delta^2  ) 
+    \eeq
+ Spectral transform yields
+ \beq
+  -k^2 \hat p  -m^2 /\delta^2 \hat p = \hat div
+ \eeq 
+% \fi
+
+
+\subsection*{Pressure  with rigid lid}
+
+Taking the divergence of the momentum equation yields 
+\beq
+  (\delta_x^-  \delta_x^+ + \delta_y^-  \delta_y^+ ) p_{i,j,k}  +  \delta_z^-  \delta_z^+ p_{i,j,k}  /\delta^2 &=&  f_{i,j,k}
+\eeq
+Horizontal Fourier transform yields
+\beq
+ -( \hat k_x^+(k_x)   \hat k_x^-(k_x)   +  \hat k_y^+(k_y)   \hat k_y^-(k_y)   ) \hat p_{i,j,k} +  \delta_z^-  \delta_z^+ p_{i,j,k} /\delta^2 &=&  \hat f_{i,j,k}
+\eeq
+For $k=N$
+\beq
+ \delta_z^-  \delta_z^+ p_{i,j,k}  = ( (p_{k+1}-p_k) - (p_k - p_{k-1}) )/\Delta z^2 =   (-p_k + p_{k-1})/\Delta z^2
+ \\
+ -( \hat k_x^+(k_x)   \hat k_x^-(k_x)   +  \hat k_y^+(k_y)   \hat k_y^-(k_y)  + 1/\Delta z^2  /\delta^2  ) \hat p_{i,j,k} 
+ + p_{k-1} /\Delta z^2  /\delta^2 
+   &=&  \hat f_{i,j,k}
+\eeq
+For interior $k$
+\beq
+  \hat p_{k+1}/ \Delta z^2  /\delta^2  -( \hat k_x^+(k_x)   \hat k_x^-(k_x)   +  \hat k_y^+(k_y)   \hat k_y^-(k_y)  + 2 /\Delta_z^2 /\delta^2   ) \hat p_{i,j,k} 
+ + \hat p_{k-1} / \Delta z^2/\delta^2 
+ &=&  \hat f_{i,j,k}
+\eeq
+For $k=1$
+\beq
+ \delta_z^-  \delta_z^+ p_{i,j,k}  = ( (p_{k+1}-p_k) - (p_k - p_{k-1}) )/\Delta z^2 =  (p_{k+1}-p_k)  /\Delta z^2 
+ \\
+ p_{k+1} /\Delta z^2 /\delta^2 
+ -( \hat k_x^+(k_x)   \hat k_x^-(k_x)   +  \hat k_y^+(k_y)   \hat k_y^-(k_y) +1/\Delta z^2  /\delta^2  ) \hat p_{i,j,k} 
+   &=&  \hat f_{i,j,k}
+\eeq
+Set for horizontal mean $p_{1,0}=0$. Then for $k=1$
+\beq
+ \delta_z^-  \delta_z^+ p_{i,j,k}  = ( (p_{k+1}-p_k) - (p_k - p_{k-1}) )/\Delta z^2 =    p_{k+1}  /\Delta z^2~\to~p_2 = f_1 \Delta z^2 \delta^2 
+\eeq
+For $k=2$ 
+\beq
+ \delta_z^-  \delta_z^+ p_{i,j,k}  = ( (p_{k+1}-p_k) - (p_k - p_{k-1}) )/\Delta z^2 = 
+  ( p_{k+1} - 2 p_k )/\Delta z^2
+  ~\to~   p_{3} = 2 p_2  + f_2 \Delta z^2 \delta^2 
+ \eeq
+For $k$
+\beq
+ \delta_z^-  \delta_z^+ p_{i,j,k}  = ( (p_{k+1}-p_k) - (p_k - p_{k-1}) )/\Delta z^2 = f_k  \delta^2 
+  ~\to~  p_{k+1} =  2 p_k  -  p_{k-1}    + f_k \Delta z^2   \delta^2 
+ \eeq
+
+\subsection*{Biharmonic friction}
+
+\ifdetail
+One version is
+\beq
+ \p_t  u = ... - (\vn, \p_z)^T    \cdot (\vn, \p_z)^T       (\vn, \p_z)^T    \cdot \v A  \cdot   (\vn  u , \p_z u)^T  
+ \\
+   =  A_h \vn^4 u  + (A_h + A_v) \vn^2  \p_{zz}  u +    A_v \p_{z}^4  u
+\eeq
+with
+\beq 
+\v A 
+= \left(\begin{array}{ccc}  
+A_h & 0 & 0 \\
+0 & A_h & 0 \\
+0  & 0 & A_v 
+\end{array}\right)  
+\eeq
+%\ifdetail
+\beq
+\v A \cdot  (\vn  u , \p_z u)^T   =  ( A_h \p_x u , A_h \p_y u , A_v \p_z u )^T
+\\
+     (\vn, \p_z)^T    \cdot \v A  (\vn  u , \p_z u)^T  
+     =  A_h \p_{xx}  u +  A_h \p_{yy} u +   A_v \p_{zz}  u 
+     \\
+      (\vn, \p_z)^T       (\vn, \p_z)^T    \cdot \v A  \cdot   (\vn  u , \p_z u)^T  
+      = ( \vn , \p_z )  (A_h \p_{xx}  +  A_h \p_{yy}  +   A_v \p_{zz})   u 
+      \\
+       (\vn, \p_z)^T    \cdot (\vn, \p_z)^T       (\vn, \p_z)^T    \cdot \v A  \cdot   (\vn  u , \p_z u)^T  
+       = (A_h \p_{xx}  +  A_h \p_{yy}  +   A_v \p_{zz})  (  \p_{xx}   + \p_{yy} + \p_{zz} ) u 
+       \\
+       =  A_h \vn^4 u
+       + (A_h + A_v) (\p_{xx}  +  \p_{yy} )  \p_{zz}  u
+            +    A_v \p_{zzzz}  u
+\eeq
+\fi
+Biharmonic friction reads as
+\beq
+ \p_t  u = ...  - A_h \vn^4 u  - A_v \p_z^4 u 
+ \eeq
+ \ifdetail
+ \beq
+ \vn \cdot A_ h \vn u  = (A_h \p_{xx} + A_h \p_{yy} ) u 
+ \\
+   \vn^4 u  =    ( \p_{xx} +  \p_{yy} ) ( \p_{xx} +  \p_{yy} ) u
+=( \p_{xxxx} +  2 \p_{xxyy}  +  \p_{yyyy} ) u
+\eeq
+\fi
+%
+\ifdetail
+\beq
+ \p_t u = ... -  \v u \cdot \vn u  - w \p_z u  - A_h \vn^4 u  - A_v \p_z^4 u 
+ \\
+ U \Omega \p_t u = ...    - U^2/L  \v u \cdot \vn u  - WU /H w \p_z u  - A_h U/L^4  \vn^4 u  - A_v U/H^4  \p_z^4 u 
+ \\
+ \p_t u = ... Ro \v u \cdot \vn u  -  Ro   w \p_z u  - A_h  \vn^4 u  - A_v  \p_z^4 u 
+ \\
+ Ro U^2/ \Delta x \sim A_h U/ \Delta x ^4   ~\to~ Ro \Delta x^3  \sim A_h ~,~A_v \sim Ro \Delta z^3 
+\eeq
+\fi
+%
+%
+Scaling yields with  $T=1/\Omega$, $W/U = H/L= \delta$ and $A_h \sim \Delta x^4 \Omega$  and $A_v \sim \Delta z^4 \Omega$ 
+\beq
+%U \Omega   \p_t  u = ...  - A_h U/L^4  \vn^4 u  - A_v U/H^4  \p_z^4 u \\
+  \p_t  u = ...  - \Delta x^4 /  L^4   \vn^4 u  - \Delta z^4/ H^4   \p_z^4 u 
+  \eeq
+On the grid scale $\Delta x$ friction and advection terms should scale equally.
+\beq
+% \p_t u = ... Ro \v u \cdot \vn u  -  Ro   w \p_z u  - A_h  \vn^4 u  - A_v  \p_z^4 u  \\
+ Ro U^2/ \Delta x \sim A_h U/ \Delta x ^4   ~\to~ A_h \sim U Ro \Delta x^3   ~,~A_v \sim U  Ro \Delta z^3 
+\eeq
+
+
+
+\subsection*{Waves and modes for rigid lid}
+
+Neglecting the non-linear terms, mixing and friction 
+\beq
+ \pt{\v u } + f \rvec{\v u}  +   \vn p = 0
+ ~~,~~ \delta^2 \p_t w + \p_z p -b = 0~~,~~
+    \pt{b}  + N^2  w    = 0   ~~,~~\p_z w + \vn \cdot \v u = 0
+  \eeq
+Divergence and vorticity for $f=const$
+\beq
+ \p_t \vn \cdot \v u  - f    \rvec{\vn} \cdot \v u  +   \vn^2 p = 0
+~~,~~
+ \p_t \rvec{\vn} \cdot \v u   + f \vn \cdot \v u   = 0
+\eeq
+Time derivative of divergence and vertical momentum 
+\beq
+ \p_{tt}  \vn \cdot \v u   + f^2 \vn \cdot \v u    +   \vn^2 \p_t p = 0~~,~~ \delta^2 \p_{tt} w + \p_z \p_t p + N^2 w = 0
+ \eeq
+ Combination yields the wave equation for $w$
+ \beq
+ \p_{zz} \lk  \p_{tt}  w    +  f^2   w \rk   +  \vn^2 ( \delta^2 \p_{tt} w + N^2 w ) = 0
+ \eeq
+Free  wave ansatz $w = \exp i (\v k \cdot \v x + m z - \omega t) $
+  \beq
+ (i m)^2   \lk  (-i \omega)^2       +  f^2    \rk   +  (i \v k)^2  ( \delta^2  (-i \omega)^2   + N^2  ) = 0
+ ~\to~
+ \omega^2     =    \frac{m^2 f^2  + k^2 N^2} { \delta^2 k^2 +m^2} 
+ \eeq
+ Wave polarisation from $u = U_0 \exp i (\v k \cdot \v x + m z - \omega t) $, etc, which yields for instance
+ \ifdetail
+ \beq
+ \pt u  - f v  +   \p_x  p = 0 ~,~\pt v  + f u  +   \p_y  p = 0 
+ \\
+ - i \omega  U_0 - f V_0  +i   k_x  P_0 = 0  ~,~ -i \omega  V_0  + f U_0  +   i k_y  P_0 = 0 
+ \\
+  (\omega^2 - f^2 ) U_0 = (k_1 \omega + i k_2 f) P_0  ~,~ (\omega^2 - f^2 ) V_0 &=& (k_2 \omega - i k_1 f) P_0
+ \\
+\delta^2   (-i \omega)^2  W_0  e^{i(...)}  &=& - (i k_3) (-i \omega) P_0  e^{i(...)}  - W_0 N^2  e^{i(...)}  \\ 
+  - \delta^2  \omega^2  W_0 &=&  - k_3\omega P_0 - W_0 N^2 \\
+    (  \delta^2 \omega^2 - N^2 ) W_0 &=& k_3 \omega P_0 
+\eeq
+and so
+\beq
+U_0 U_0^* + V_0 V_0^* =  P_0^2  \frac{(k_1 \omega + i k_2 f) (k_1 \omega - i k_2 f)  +(k_2 \omega - i k_1 f) (k_2 \omega + i k_1 f)  }{(\omega^2 - f^2 )^2 } 
+\\
+= P_0^2  \frac{ k_h^2 ( \omega^2  + f^2 )    }{(\omega^2 - f^2 )^2 } 
+\\
+W_0 W_0^* = P_0^2  \frac{ k_3^2 \omega^2   }{( \delta^2  \omega^2 - N^2 )^2 } 
+\eeq
+\fi
+ \beq
+ R_k=  \frac{w^2}{u^2 + v^2} =  \frac{ m^2 \omega^2  (\omega^2 - f^2 )^2 }{(\delta^2 \omega^2 - N^2 )^2 k^2 ( \omega^2  + f^2 )    } 
+   = \frac{  \omega^2  (\omega^2 - f^2 )    }{(N^2 - \delta^2 \omega^2  )  ( \omega^2  + f^2 )  } 
+ \eeq
+% with
+% \beq
+%  (\omega^2   \delta^2 - N^2)  k^2 + (\omega^2 -f^2) m^2   =    0 ~,~m^2/k^2 =   (N^2 - \omega^2   \delta^2 ) /(\omega^2 -f^2)
+% \eeq 
+\ifdetail
+ \beq
+  R_k (N^2 - \delta^2 \omega^2  )  ( \omega^2  + f^2 )   &=&  \omega^4 - \omega^2 f^2  
+  \\
+    R_k N^2    \omega^2  + R_k N^2   f^2  -   R_k  \delta^2 \omega^2 \omega^2  - R_k  \delta^2 \omega^2  f^2    &=&  \omega^4 - \omega^2 f^2  
+ \\
+      R_k N^2  f^2       
+    &=&  \omega^4 (1+    R_k \delta^2)    -  \omega^2 (  f^2  -  R_k \delta^2f^2 +R_k N^2  )
+    \\
+         \frac{ R_k N^2  f^2  }{ (1+    R_k \delta^2) }      
+    &=&  \omega^4     -  \omega^2 \frac{ (  f^2  -  R_k \delta^2f^2 +R_k N^2  ) }{  (1+    R_k \delta^2) }    
+    \\
+            \frac{ R_k N^2  f^2  }{ (1+    R_k \delta^2) }       +  \frac{ (  f^2  -  R_k \delta^2f^2 +R_k N^2  )^2 }{  4 (1+    R_k \delta^2)^2 }  
+    &=& \lk  \omega^2     -  \frac{ (  f^2  -  R_k \delta^2f^2 +R_k N^2  ) }{  2 (1+    R_k \delta^2) }    \rk^2 
+    \\
+       \frac{ 4 R_k N^2  f^2 (1+    R_k \delta^2)+(  f^2  -  R_k \delta^2f^2 +R_k N^2  )^2 }{  4 (1+    R_k \delta^2)^2 }
+       &=&  \lk  \omega^2     -  \frac{ (  f^2  -  R_k \delta^2f^2 +R_k N^2  ) }{  2 (1+    R_k \delta^2) }    \rk^2 
+   \eeq
+  \fi
+  or
+\beq
+ \omega^2 =  \frac{ \sqrt{ 4 R_k N^2  f^2 (1+    R_k \delta^2)+(  f^2  -  R_k \delta^2f^2 +R_k N^2  )^2 } }{  2 (1+    R_k \delta^2) }
+ +\frac{ (  f^2  -  R_k \delta^2f^2 +R_k N^2  ) }{  2 (1+    R_k \delta^2) } 
+ \eeq
+%
+ With constant mean flow $\v U$ 
+ \beq
+ \lk \omega   - Ro \, \v U \cdot \v k_h  \rk^2  =    \frac{m^2 f^2  + k^2 N^2} { \delta^2 k^2 +m^2} 
+ \eeq
+ Wave ansatz with  $w = \exp i (\v k \cdot \v x  - \omega t) \p_z \phi(z) $ for rigid lid
+  \beq
+   \p_{zzz}  \phi  
+  + k^2  \frac{ \delta^2  \omega^2   - N^2  }{ f^2 - \omega^2}  \p_z \phi  = 0~,~\p_z \phi = \sin m z ~,~m = n \pi/h 
+ \eeq
+ Thus we have rigid lid modes $\phi = \cos m z$ for $\v u$ and $p$ and $\p_z \phi = \sin(m z)$ for $w$ and $b$. 
+ \ifdetail
+ 
+ This is better in a section below 
+ 
+ Discrete modes for $zt_k=(k-1/2) \Delta z$ and $zw_k = k \Delta z$ and $h = N \Delta z$ and $k=1,..N$ are
+ \beq
+  \phi_k^n  =  \cos zt_k n  \pi/h   ~\to~ \phi_1  =   \cos (   n  \pi/(2N)  ) ~,~\phi_0 = \phi_1
+  \\ 
+  \phi_N =  \cos n \pi (1-1/(2N)) 
+  ~,~\phi_{N+1} = \cos  n \pi  (1+1/(2N))  = \phi_N
+ \eeq
+ \beq
+  \p_z \phi_k = \sin( zw_k n \pi /h )~,~ \p_z \phi_0 = 0~,~\p_z \phi_N = 0
+ \eeq
+ Coefficients for $u = \sum_n u_n \phi_n$ by
+ \beq
+  \sum_m u  \phi_m \Delta z =
+ \sum_n  u_n \sum_m    \phi_n \phi_m \Delta z =  u_n
+ \eeq
+ with suitable normalisation $\sum_m \phi_n \phi_m  = \delta_{n,m}$  by
+ \beq
+  \phi_k^0 = \sqrt{1/h} ~,~\phi_k^{n>0} = \sqrt{2/h}  \cos zt_k n  \pi/h  
+ \eeq
+
+\fi
+
+\subsection*{Potential vorticity}
+
+ 
+Scaling  unscaled PV yields
+\ifdetail
+ \beq
+Q &=&     ( \v k f + \vn \times \v u ) \cdot \vn (b + N^2 z) 
+= \lk  \v k  f +  \Vec{ \p_y w - \p_z v  \\ \p_z u - \p_x w  \\ \p_x v - \p_y u  } \rk \cdot \Vec{ \p_x b \\ \p_y b  \\ \p_z b + N^2 } 
+\\
+&=& 
+ \lk \v k  f \Omega  
+ +  \Vec{ W/L \p_y w -  U/H \p_z v  \\ U/H  \p_z u - W/L \p_x w  \\U/L  \p_x v - U/L  \p_y u  }
+  \rk  \cdot \Vec{ B/L  \p_x b \\ B/L \p_y b  \\ B/H \p_z b + N^2 } 
+  \\
+  &=& 
+\frac{\Omega B}{L}   \lk \v k  f   
+ + \frac{1}{\Omega}  \Vec{ W/L \p_y w -  U/H \p_z v  \\ U/H  \p_z u - W/L \p_x w  \\U/L  \p_x v - U/L  \p_y u  }
+  \rk  \cdot \Vec{   \p_x b \\  \p_y b  \\   1/\delta  \p_z b + N^2 L/B  } 
+%
+ \eeq
+  with $\delta U= W$, $\delta = H/L$ and $B = L\Omega U/H$.
+  \beq
+ Q &=&  \frac{ \Omega^2  U}{ \delta L Ro }     \lk  \v k  f +  
+Ro  \Vec{ \delta \p_y w -  1 / (\delta )  \p_z v  \\ 
+1/(\delta )   \p_z u - \delta  \p_x w  \\ 
+ \p_x v - \p_y u   } \rk \cdot   \Vec{ Ro  \p_x  b\\   Ro  \p_y   b   \\  Ro/\delta   \p_z   b  +  L_r^2/  \delta L^2   } 
+ \\
+Q\frac { \delta L Ro }{ \Omega^2  U}  &=& 
+  f N^2 /  \delta +   f  Ro/\delta   \p_z   b   + 
+  Ro ( \p_x v - \p_y u ) N^2/  \delta
+ \\ &&  + Ro^2/\delta ( - \p_z v \p_x b + \p_z u \p_y b ) 
+ + Ro^2/\delta  ( \p_x v - \p_y u ) \p_z   b
+  +  Ro^2\delta  ( \p_y w  \p_x b -  \p_x w   \p_y b    ) 
+  \eeq
+   \fi 
+  \beq
+ Q &=& 
+  f +   \frac{f  Ro  }{N^2}  \p_z   b   + 
+  Ro ( \p_x v - \p_y u )
+  + Ro^2/N^2 \lk   ( \p_x v - \p_y u ) \p_z   b - \p_z v \p_x b + \p_z u \p_y b  \rk 
+ \\ && 
+  +  Ro^2\delta^2/N^2   ( \p_y w  \p_x b -  \p_x w   \p_y b    ) 
+  \eeq 
+  The last term vanishes in primitive equations.
+   
+  
+\subsection*{Scaled eigenvectors}
+
+
+  The scaled Boussinesq equations are
+\beq
+ \p_t  \v u  + f \rvec{ \v u} +\vn  p  &=&    -Ro  \, \lk \v u \cdot \vn \v u  + w \p_z \v u \rk   \\
+  \p_t w   + (\p_z p  -   b) /\delta^2  &=& -  Ro \,  \lk  \v u \cdot \vn w  + w \p_z w \rk 
+\\
+\p_t b + N^2 w &=&  - Ro \,  \lk \v u \cdot \vn b   + w \p_z b \rk 
+ \eeq
+ with Rossby number $Ro$ and aspect ratio $\delta $.
+We add for the moment the sound wave equation
+    \beq
+  \pt{} p   =  -   c_s^2    ( \vn \cdot \v  u +  \p_z  w )   
+  \eeq
+  with the scaled sound speed  $c_s = Ro/Ma $ and
+  with the Mach number $Ma = U/\tl c_s\ll Ro$ .
+  \ifdetail
+  Scale pressure equation and
+   set $T=1/\Omega$, $W/U = H/L$,  and $P= L \Omega U$
+  \beq
+      \pt p   = -  Ro^2  /Ma^2  (   \vn \cdot \v  u +   \p_z  w ) 
+   \eeq
+      to the system, with the sound wave velocity $c_s$.
+      \fi
+      Assuming a triple-periodic domain and applying the Fourier ansatz
+  \beq
+ \v u (\v x, t)  = \int_{-\infty}^\infty d{\v K} \, \hat \v u_n(\v K, t)   e^{ i \v K \cdot \v x  }
+ \eeq
+ and similar for $w$ and $b$  with wavenumber vector $\v K = (k_x ,k_y,k_z)$, 
+yields
+after multiplication with $  e^{- i \v K \cdot \v x} $ and integration over $\v x$
+\beq
+ \pt{} \v z =  i  \v A \cdot \v z  - Ro \, \hat{\v n} 
+ \eeq
+with the linear system matrix $\v A(\v K)$,  the state vector $\v z(\v K,t)$, and the vector function $\v N$ given by
+ \beq
+\v A = \left(\begin{array}{ccccc}  
+0 & -i f & 0 & 0 & - k_x \\  
+i f & 0 & 0 & 0 &  - k_y  \\   
+0  & 0 & 0 & -i /\delta^2 &  - m /\delta^2  \\
+0  & 0 &  i N^2  &0 &  0    \\
+- c_s^2 k_x &   -  c_s^2  k_y & - c_s^2 m & 0 & 0  \end{array}\right)  
+~~,~~\v z = \Vec{ \hat u \\ \hat v \\   \hat w \\ \hat b \\ \hat  p}
+ \eeq
+ \ifdetail
+The right eigenvectors $\omega \v q = \v A \cdot \v q $ of the linear system are
+given by the relations
+\beq
+ \omega u = -i f v  - k_x p ~~\to~~ (\omega^2 -f^2) u =  (+ i f k_y    - k_x \omega ) p
+ ~~,~~
+ \hat u = \frac{ + i f k_y    - k_x \omega }{ \omega^2 -f^2} \hat p
+\\
+ \omega v = i f u - k_y p ~~\to~~(\omega^2 -f^2) v =   (-  i f k_x   - k_y \omega ) p 
+  ~~,~~
+  \hat v = \frac{ - i f k_x    - k_y \omega }{ \omega^2 -f^2} \hat p
+ \\
+\delta^2  \omega w =   - i b -m p~~\to~~  (\delta^2 \omega^2 -N^2 ) w =    -m \omega p
+~~,~~
+\hat w =    - \frac{m \omega}{ \delta^2 \omega^2 -N^2 }  \hat p
+\\
+\omega b = i N^2 w   ~~\to~~  (\delta^2  \omega^2-N^2 ) b =   -i m N^2  p  ~~,~~
+\hat b =  - \frac{i mN^2 }{ \delta^2 \omega^2 -N^2 }  \hat p
+\\
+ \omega p = - c_s^2 ( u k_x + v k_y + w m )  ~~\to~~ 
+ \omega \hat p = c_s^2   \frac{ (k_x^2 +k_y^2)  \omega  }{ \omega^2 -f^2} \hat p   
++ c_s^2 \frac{m^2 \omega }{ \delta^2 \omega^2 -N^2 }  \hat p
+\eeq
+For $c_s \to \infty$ and $\omega \neq 0$ we have from the last relation the dispersion relation 
+\beq
+k^2 N^2  +f^2 m^2  =  ( k^2 \delta^2  + m^2 ) \omega^2   
+\eeq
+The left eigenvectors $\omega \v p = \v p \cdot \v A $ are given by
+\beq
+% \omega u = if v - c_s^2 k_x p ~~,~~\omega v = - if u - c_s^2 k_y p  \\
+%( \omega^2 -f^2) u =   (- if  k_y p  - k_x \omega ) c_s^2 p  
+%~~,~~(\omega^2-f^2)  v = (+ if k_x p  - k_y \omega) c_s^2 p \\
+ %\hat \v u_l =  \frac{  i f \rvec{\v k}    -\v  k \omega }{ \omega^2 -f^2} c_s^2 \hat p_l
+ % \\
+  \omega   \hat w_l = i N^2 b_l   - c_s^2 m p_l  
+ ~~,~~( \omega^2    -N^2/\delta^2 ) \hat w_l =  - m \omega c_s^2 p_l
+\\\omega b_l = - i w_l / \delta^2  ~~,~~ ( \omega^2 -N^2/\delta^2 ) b_l =   im c_s^2 p_l /\delta^2
+\\
+~~,~~\hat w_l =    - \frac{m \omega }{ \delta^2  \omega^2 -N^2}  c_s^2 \hat p_l \delta^2
+~~,~~\hat b_l =  \frac{i m }{ \delta^2 \omega^2 -N^2 }  c_s^2 \hat p_l
+\eeq
+\fi
+
+ For the system without the auxiliary sound wave equation we then have the eigenvectors
+\beq
+ \v q^\pm = \lk  \frac{  i f \rvec{\v k}    +\v  k \omega }{ f^2-\omega^2 }   ~,~
+    \frac{m \omega}{ N^2 - \delta^2 \omega^2}   ~,~
+     \frac{i mN^2 }{ N^2 - \delta^2 \omega^2 }   \rk^T 
+ \\
+\v p^\pm = p_\pm \lk   \frac{ - i f \rvec{\v k}    +\v  k \omega }{ f^2 - \omega^2 }  ~,~
+  \frac{m \omega \delta^2 }{N^2 -  \delta^2  \omega^2}  ~,~
+- \frac{i m }{N^2 - \delta^2  \omega^2 }   \rk
+\eeq
+Eigenvalues $\omega$ are given by
+ \beq
+ \omega= 0 ~,~
+k^2 N^2  +f^2 m^2  =  ( k^2 \delta^2  + m^2 ) \omega^2   
+\eeq
+\ifdetail
+Orthonormalisation  goes as
+\beq
+ \v Q^0 \cdot \v P^0 =  p_0 ( k^2/f^2 + m^2 /N^2) = 1 
+ ~\to~p_0 = \frac{f^2 N^2  }{ k^2 N^2  + f^2 m^2 } 
+\eeq
+\beq
+\v Q^\pm \cdot \v P^\pm = p_\pm \lk  
+\frac{   k^2 ( \omega^2  +f^2)  }{ (f^2-\omega^2)^2 }   +
+  \frac{m^2 (N^2 + \omega^2 \delta^2 ) }{(N^2 -  \delta^2 \omega^2)^2} 
+ \rk 
+ \\ 
+  \omega^2 k^2 \delta^2  +\omega^2 m^2 = k^2 N^2 + f^2 m^2 ~,~
+  k^2 (\omega^2 \delta^2 - N^2) = m^2 (f^2 - \omega^2)
+ \\
+ = p_\pm \lk  
+\frac{   m^2 ( \omega^2  +f^2)  }{ (f^2-\omega^2) (\omega^2 \delta^2 - N^2)  }   -
+  \frac{k^2 (N^2 + \delta^2 \omega^2) }{(N^2 -  \delta^2 \omega^2) (f^2 - \omega^2)} 
+ \rk  
+ \\
+  = p_\pm \lk  
+  \frac{ (m^2   + k^2 \delta^2 ) \omega^2  +m^2 f^2  + k^2  N^2  }{(N^2 -  \delta^2 \omega^2) ( \omega^2 - f^2 )} 
+ \rk  
+ \\
+ p_\pm =   \frac{(N^2 -  \delta^2 \omega^2) ( \omega^2 - f^2 )} { (m^2   + k^2 \delta^2 ) \omega^2  +m^2 f^2  + k^2  N^2  }
+ =  \frac{(N^2 -  \delta^2 \omega^2) ( \omega^2 - f^2 )} { 2(m^2 f^2  + k^2  N^2 )  }
+ \eeq
+ \fi
+ Orthonormalisation  is given by
+ \beq
+ p_0 = \frac{f^2 N^2  }{ k^2 N^2  + f^2 m^2 } 
+ ~,~p_\pm =  \frac{(N^2 -  \delta^2 \omega^2) ( \omega^2 - f^2 )} { 2(m^2 f^2  + k^2  N^2 )  }
+\eeq
+ The following relation holds
+\beq
+\v q  = (q_u,q_v,q_w,q_b,q_p)^T  ~,~
+ \v p =p_s ( q_u^* , q_u^* , q_w \delta^2 , q_b^* /N^2 )
+\eeq
+
+
+
+
+\subsection*{Rigid lid vertical mode eigenvectors}
+
+We have the linear system
+\beq
+ \p_t  \v u   = - f \rvec{ \v u} - \vn  p     ~,~
+  \p_t w    = -  (\p_z p  -   b) /\delta^2
+~,~
+\p_t b  =   - N^2 w
+ ~,~
+  \pt{} p   =  -   c_s^2    ( \vn \cdot \v  u +  \p_z  w )   
+  \eeq
+Assume a double periodic domain and use 
+ \beq
+ \v u (\v x,z, t)  = \int_{-\infty}^\infty d{\v k} \, \hat \v u(\v k,z, t)   e^{ i \v k \cdot \v x  }
+ \eeq
+ and similar for $w$ and $b$  with wavenumber vector $\v k = (k_x ,k_y)$, 
+yields
+after multiplication with $  e^{- i \v k' \cdot \v x} $ and integration over $\v x$
+\ifdetail
+\beq
+ \int d{\v k}  \,  \p_t  \hat \v u \int  e^{ i (\v k- \v k')  \cdot \v x  }d\v x 
+    &=& - f \int   d{\v k} \,  \rvec{\hat \v u}  \int  e^{ i (\v k - \v k') \cdot \v x  }  d\v x
+    -    \int    d{\v k} \,  i \v k  \hat p \int e^{ i (\v k- \v k')  \cdot \v x  } d\v x    \\
+  \int d{\v k}  \,  \p_t  \hat \v u \delta (\v k- \v k')
+    &=& - f \int   d{\v k} \,  \rvec{\hat \v u}  \delta  (\v k - \v k')
+    -    \int    d{\v k} \,  i \v k  \hat p \delta (\v k- \v k')     \eeq
+    \fi
+    \beq
+     \p_t  \hat \v u = - f  \rvec{\hat \v u}  -     i \v k  \hat p ~,~
+       \p_t \hat w    = -  (\p_z \hat p  -   \hat b) /\delta^2
+~,~
+\p_t \hat b  =   - N^2 \hat w
+ ~,~
+  \pt{} \hat p   =  -   c_s^2    ( i \v k \hat{\v  u}  +  \p_z  \hat w )
+  \eeq
+  \ifdetail
+  Combining divergence and vorticity equation
+  \beq
+    \p_t \v k \cdot  \hat \v u = - f  \v k \cdot \rvec{\hat \v u}  -     i k^2  \hat p ~,~
+      \p_t  \v k \cdot \rvec{ \hat \v u }  =  f \v k \cdot \hat \v u   
+      ~\to~
+       \p_{tt}  \v k \cdot  \hat \v u = - f^2   \v k \cdot \hat \v u     -     i k^2  \p_t  \hat p
+       \eeq
+  with 
+  \beq
+   \delta^2   \p_{tt}  \hat w    = -  \p_z \p_t \hat p  + \p_t   \hat b~\to~
+   \delta^2   \p_{tt}  \hat w    = -  \p_z \p_t \hat p  - N^2 \hat w
+  \eeq
+  \fi
+  The wave equation 
+for $c_s \to \infty$   becomes
+    \beq
+%-   \p_{tt} \p_z w  =  f^2 \p_z w    +     k^2  \p_t  \hat p ~,~-   \p_{tt} \p_{zz}  w  =  f^2 \p_{zz}  w    +     k^2  \p_t \p_z   \hat p 
+%~,~
+% \delta^2  k^2  \p_{tt}  \hat w    = -  k^2  \p_z \p_t \hat p  - N^2 k^2 \hat w
+% \\
+% - \p_{tt} \p_{zz}  w +  \delta^2  k^2  \p_{tt}  \hat w     =  f^2 \p_{zz}  w     - N^2 k^2 \hat w  ~,~
+ - \p_{tt} \p_{zz}  w +  \delta^2  k^2  \p_{tt}  \hat w     -  f^2 \p_{zz}  w     + N^2 k^2 \hat w  = 0 
+ ~\to~
+  \p_{zz}  \psi    + \lambda_n^2 \psi = 0 
+ ~,~\lambda_n^2  =  k^2 \frac{     N^2 - \delta^2    \omega^2    }{ \omega^2   -  f^2}   = \lk n\pi/h\rk^2 
+       \eeq
+  with separation ansatz $w \sim \exp(- \omega t) \psi(z) $. Solution is $\psi_n = \sqrt{2/h}  \sin n \pi z/h$
+  with $\int \psi_n \psi_n dz = \delta_{n,m}$.  
+  \beq
+\int  \psi_m   \p_{zz}  \psi_n   dz  =  \psi_m \p_z \psi_n| - \int (\p_z \psi_m)  \p_z \psi_n dz 
+~\to~
+\int (\p_z \psi_m)  \p_z \psi_n dz = \lambda_n^2 \delta_{n,m} 
+  \eeq
+  Modes for $\v u$ and $p$ are $\phi_n = \sqrt{2/h}  \cos n \pi z/h$,
+  with  $\int \phi_n \phi_n dz = \delta_{n,m}$ and $\p_z \psi_n =\lambda_n  \phi_n$.
+Multiplication by $\phi_n$ or $ \psi_n$, integration over depth, and using the modal representation yields
+\ifdetail
+    \beq
+     \p_t \int dz  \hat \v u  \phi_n &=& - f  \int dz \rvec{\hat \v u} \phi_n  -     i \v k \int dz \hat p  \phi_n
+     \\
+           \p_t  \hat \v u_n &=& - f  \rvec{\hat \v u}_n  -     i \v k  \hat p_n
+           \\
+             \pt{}  \hat p_m    &=&  -   c_s^2    ( i \v k \cdot   \hat{\v  u}_m
+             +   \sum_n  \hat w_n  \int  \phi_m  \p_z  \psi_n dz  )
+             = -   c_s^2    ( i \v k \cdot   \hat{\v  u}_m +   (n \pi /h) \hat w_m   )       \\
+   \delta^2    \p_t \sum_n \hat w_n\psi_n     &=& -   \sum_n  \hat p_n \p_z \phi_n   +   \sum_n \hat b_n\psi_n  
+   \\
+    \delta^2    \p_t \hat w_m      &=& -   \sum_n  \hat p_n \int  \psi_m  \p_z \phi_n dz  +    \hat b_m
+    =  -   \sum_n  \hat p_n \int  \psi_m  \p_{zz}  \psi_n/(n \pi /h)    dz  +    \hat b_m
+    \\
+    &=&      \hat p_m  \lambda^2_m /(m \pi /h)      +    \hat b_m
+           \eeq
+      \fi 
+         \beq
+     \p_t  \hat \v u_n = - f  \rvec{\hat \v u_n}  -     i \v k  \hat p_n 
+     ~,~
+   \delta^2    \p_t \hat w_n=    \hat p_n  \lambda^2_n /(n \pi /h)      +    \hat b_n
+~,~
+\p_t \hat b_n  =   - N^2 \hat w_n~,~\pt{}  \hat p_n=-   c_s^2    ( i \v k \cdot   \hat{\v  u}_n +   (n \pi /h) \hat w_n   )  
+  \eeq
+  The
+system matrix in $\p_t \v z = i \v A \cdot \v z $ is then
+      \beq
+     \p_t  \hat \v u_n = i (  f  \rvec{\hat \v u_n}  -      \v k  \hat p_n ) 
+     ~,~
+    %  \p_t \hat w_n    = i^2  ( \hat p_n  -   \hat b_n) /\delta^2
+        \p_t \hat w_n= i(  -i  \hat p_n  \lambda^2_n /(n \pi /h)      -i    \hat b_n)/\delta^2 
+~,~
+\p_t \hat b_n  =   i^2 N^2 \hat w_n
+~,~  %\p_t \hat p_m =  -   i c_s^2     ( \v k  \hat{\v  u}_m  + i \lambda_n^2  \hat w_m)  
+\pt{}  \hat p_n= i  c_s^2    ( - \v k \cdot   \hat{\v  u}_n +   i (n \pi /h) \hat w_n   )  
+  \eeq
+
+ \beq
+\v A = \left(\begin{array}{ccccc}  
+0 & -i f & 0 & 0 & - k_x \\  
+i f & 0 & 0 & 0 &  - k_y  \\   
+0  & 0 & 0 & -i /\delta^2 &  - \textcolor{red}{i \lambda_n  /\delta^2}  \\
+0  & 0 &  i N^2  &0 &  0    \\
+- c_s^2 k_x &   -  c_s^2  k_y &  \textcolor{red}{ c_s^2 i \lambda_n }  & 0 & 0  \end{array}\right)  
+~~,~~\v z = \Vec{ \hat u_n \\ \hat v_n \\   \hat w_n \\ \hat b_n \\ \hat  p_n}
+ \eeq
+Difference to before in red: $m \to \pm i \lambda_n$.
+The right eigenvectors $\omega \v q = \v A \cdot \v q $ and the left ones $\omega \v p = \v p \cdot \v A$
+of the linear system are given by the relations
+\ifdetail
+\beq
+\delta^2  \omega w =   - i b -  i  \lambda_n p~~\to~~  (\delta^2 \omega^2 -N^2 ) w =  -  i \omega \lambda_n p
+~~,~~
+\hat w =     \frac{i \lambda_n \omega}{ N^2- \delta^2 \omega^2  }  \hat p
+\\
+\omega b = i N^2 w   
+%~,~\omega^2 \delta^2 b =  N^2   b + N^2 \lambda_n p\\
+~~\to~~  (\delta^2  \omega^2-N^2 ) b =    N^2  \lambda_n p  ~~,~~
+\hat b = - \frac{N^2\lambda_n }{ N^2 - \delta^2 \omega^2  }  \hat p
+\eeq
+The left eigenvectors $\omega \v p = \v p \cdot \v A $ are given by
+\beq
+  \omega   \hat w_l = i N^2 b_l   +i c_s^2  \lambda_n p_l  
+ ~~,~~( \omega^2    -N^2/\delta^2 ) \hat w_l =   i \lambda_n \omega c_s^2 p_l
+ ~~,~~\hat w_l =  -  \frac{i \lambda_n \omega }{N^2 -  \delta^2  \omega^2 }  c_s^2 \hat p_l \delta^2
+\\\omega b_l = - i w_l / \delta^2  ~~,~~ ( \omega^2 -N^2/\delta^2 ) b_l =    \lambda_n c_s^2 p_l /\delta^2
+~~,~~\hat b_l = - \frac{\lambda_n }{N^2 -  \delta^2 \omega^2 }  c_s^2 \hat p_l
+\eeq
+\fi
+\beq
+ \v q^\pm = \lk  \frac{  i f \rvec{\v k}    +\v  k \omega }{ f^2-\omega^2 }   ~,~
+    \frac{i \lambda_n \omega}{ N^2 - \delta^2 \omega^2}   ~,~
+     \frac{-\lambda_n N^2 }{ N^2 - \delta^2 \omega^2 }   \rk^T 
+ \\
+\v p^\pm = p_\pm \lk   \frac{ - i f \rvec{\v k}    +\v  k \omega }{ f^2 - \omega^2 }  ~,~
+  \frac{-i \lambda_n\omega \delta^2 }{N^2 -  \delta^2  \omega^2}  ~,~
+ \frac{-\lambda_n }{N^2 - \delta^2  \omega^2 }   \rk
+\eeq
+Only the $w$ and $b$ component are different to before.
+It holds that $\v p = p_s( q_u^*,q_v^*,q_w^* \delta^2, q_b/N^2  )^T$. 
+For $\v q$, $m\to i \lambda_n $ and for $\v p$, $ m\to -i \lambda_n$.
+\ifdetail
+Orthonormalisation  goes as
+\beq
+ \v Q^0 \cdot \v P^0 =  p_0 ( k^2/f^2 + \lambda_n^2 /N^2) = 1 
+ ~\to~p_0 = \frac{f^2 N^2  }{ k^2 N^2  + f^2 \lambda_n^2 } 
+\eeq
+\beq
+\v Q^\pm \cdot \v P^\pm = p_\pm \lk  
+\frac{   k^2 ( \omega^2  +f^2)  }{ (f^2-\omega^2)^2 }   +
+  \frac{\lambda_n^2 (N^2 + \omega^2 \delta^2 ) }{(N^2 -  \delta^2 \omega^2)^2} 
+ \rk 
+ \\ 
+  \omega^2 k^2 \delta^2  +\omega^2 \lambda_n^2 = k^2 N^2 + f^2 \lambda_n^2 ~,~
+  k^2 (\omega^2 \delta^2 - N^2) = \lambda_n^2 (f^2 - \omega^2)
+ \\
+ = p_\pm \lk  
+\frac{   \lambda_n^2 ( \omega^2  +f^2)  }{ (f^2-\omega^2) (\omega^2 \delta^2 - N^2)  }   -
+  \frac{k^2 (N^2 + \delta^2 \omega^2) }{(N^2 -  \delta^2 \omega^2) (f^2 - \omega^2)} 
+ \rk  
+ \\
+  = p_\pm \lk  
+  \frac{ (\lambda_n^2  + k^2 \delta^2 ) \omega^2  +\lambda_n^2 f^2  + k^2  N^2  }{(N^2 -  \delta^2 \omega^2) ( \omega^2 - f^2 )} 
+ \rk  
+ \\
+ p_\pm =   \frac{(N^2 -  \delta^2 \omega^2) ( \omega^2 - f^2 )} { (\lambda_n^2   + k^2 \delta^2 ) \omega^2  +\lambda_n^2 f^2  + k^2  N^2  }
+ =  \frac{(N^2 -  \delta^2 \omega^2) ( \omega^2 - f^2 )} { 2(\lambda_n^2 f^2  + k^2  N^2 )  }
+ \eeq
+ \fi
+ Orthonormalisation  is given by
+ \beq
+ p_0 = \frac{f^2 N^2  }{ k^2 N^2  + f^2 \lambda_n^2 } 
+ ~,~p_\pm =  \frac{(N^2 -  \delta^2 \omega^2) ( \omega^2 - f^2 )} { 2(\lambda_n^2 f^2  + k^2  N^2 )  }
+\eeq
+ 
+\subsection*{Discrete vertical mode eigenvectors} 
+
+Discrete version for vertical after horizontal Fourier transform
+   \beq
+     \p_t  \hat \v u = - f  \rvec{\hat \v u}  -     i \v k  \hat p ~,~
+       \p_t \hat w    = -  (\delta^+_z \hat p  -   \Bar{\hat b}^{k+} ) /\delta^2
+~,~
+\p_t \hat b  =   - N^2 \Bar{\hat w}^{k-} 
+ ~,~
+  \v k \cdot \hat{\v  u}  = i  \delta^-_k   \hat w 
+  \eeq
+  \ifdetail
+  Derive the wave equation
+  \beq
+    \p_t \v k \cdot   \hat \v u = - f \v k \cdot     \rvec{\hat \v u}  -     i k^2  \hat p 
+    ~,~
+     \p_t \v k \cdot    \rvec{\hat \v u}  =  f  \v k \cdot   \hat \v u  
+     ~,~
+        \p_{tt}    \delta^-_k   \hat w = - f^2     \delta^-_k   \hat w  -      k^2  \p_t  \hat p  
+     \\
+      \delta^2  \p_{tt}  \hat w    = -  \delta^+_z \p_t  \hat p  +  \p_t  \Bar{\hat b}^{k+} 
+      = -  \delta^+_k \p_t  \hat p  - N^2   \Bar{ \Bar{\hat w}^{k-}  }^{k+} 
+      ~,~ k^2 \lk  \delta^2  \p_{tt}  \hat w  + N^2   \Bar{ \Bar{\hat w}^{k-}  }^{k+} \rk =  -  \delta^+_k \p_t  k^2 \hat p   
+      \\
+        \p_{tt}    \delta^+_k  \delta^-_k   \hat w = - f^2     \delta^+_k \delta^-_k   \hat w  -      k^2  \p_t  \delta^+_k \hat p
+        \\
+       \lk  \p_{tt}      + f^2  \rk   \delta^+_k \delta^-_k   \hat w   = 
+         k^2 \lk  \delta^2  \p_{tt}  \hat w  + N^2   \Bar{ \Bar{\hat w}^{k-}  }^{k+} \rk
+  \eeq
+  \fi
+  The discrete wave equation is given by
+  \beq
+     \lk - \p_{tt}      - f^2  \rk   \delta^+_k \delta^-_k   \hat w   +
+         k^2 \lk N^2   \Bar{ \Bar{\hat w}^{k-}  }^{k+} +  \delta^2  \p_{tt}  \hat w   \rk = 0
+  \eeq
+  Now apply  separation ansatz $\hat w_k = \hat w_0 \psi_k \exp(-i \omega t )$ 
+  \beq
+     \delta^+_k \delta^-_k   \psi   +
+         \frac{k^2}{  \omega^2      - f^2}  \lk N^2   \Bar{ \Bar{\psi}^{k-}  }^{k+} -   \delta^2 \omega^2  \psi   \rk = 0
+         ~,~\psi_0 = \psi_N=0~,~k=1,N-1
+  \eeq
+with solution 
+\beq
+ \psi_k^n =a \sin( n k \pi/N  ) ~,~1<n<N~,~a=\sqrt{2/h} ~,~\Delta z \sum_n  \psi_k^n  \psi_k^m = \delta_{n,m} 
+\eeq
+\ifdetail
+\beq
+\Delta z^2  \delta^+_k \delta^-_k   \psi  =   \psi_{k+1} - 2 \psi_k + \psi_{k-1}  
+= \sin( n (k+1) \pi/N  )  -2  \sin( n k \pi/N  )  +  \sin( n (k-1) \pi/N  ) 
+\\
+= \sin( n k \pi/N  )  \cos( n  \pi/N ) + \cos( n k \pi/N  )  \sin( n  \pi/N ) -2  \sin( n k \pi/N  ) 
+\\ + \sin( n k \pi/N  )  \cos( n  \pi/N ) - \cos( n k \pi/N  )  \sin( n  \pi/N )
+\\
+= \sin( n k \pi/N  ) 2( \cos( n  \pi/N )  -1  )   
+\\
+4 \Bar{ \Bar{\psi}^{k-}  }^{k+}  = 2\psi_k + \psi_{k+1}  + \psi_{k-1}  
+= \sin( n (k+1) \pi/N  )  +2  \sin( n k \pi/N  )  +  \sin( n (k-1) \pi/N  ) 
+\\
+=  \sin( n k \pi/N  ) 2(1 +  \cos( n  \pi/N ) ) 
+\eeq
+\beq
+        2( \cos( n  \pi/N )  -1  ) /\Delta z^2  + 
+         \frac{k^2}{  \omega^2      - f^2}  \lk N^2   (1 +  \cos( n  \pi/N ) ) /2 -   \delta^2 \omega^2   \rk = 0
+         \\
+        - \lambda_n^2   \omega^2      +  f^2   \lambda_n^2    + k^2  \lk N^2   (1 +  \cos( n  \pi/N ) ) /2 -   \delta^2 \omega^2   \rk = 0
+ \eeq
+\fi
+and the (semi) discrete dispersion relation
+ \beq
+\omega^2_n      = \frac{ 
+     f^2 \lambda_n^2   + k^2  N^2  \cos^2 n  \pi/(2N )  } 
+     {  \lambda_n^2    +  k^2 \delta^2  }
+             \eeq
+with $    \lambda_n^2 = %2(1- \cos( n  \pi/N )  )  /\Delta z^2 =
+ \lk   2 \sin  n  \pi/(2N )  \rk^2 / \Delta z ^2 $.
+ %  
+%  with     $\cos^2 x/2 =(1+\cos x)/2 $ and $\sin^2 x/2 =(1-\cos x)/2 $
+  %     
+  For $N\to \infty$ and $\Delta z = h/N \to 0$ we find 
+       $ \lambda_n^2 \to    n^2 \pi^2/h^2 $ and $ \cos^2 n  \pi/(2N ) \to 1$
+       so convergence is satisfied. 
+        With $k \to \hat k^+_x \hat k^-_x+\hat k^+_y \hat k^-_y $ 
+       and $f^2 \to f^21_x^- 1_y^+ 1_x^+ 1_y^-$ we obtain the fully discrete version.
+ 
+ \ifdetail             
+       For $\hat w_k = \sum_n \hat w_n \sin n k \pi/N $  we find
+  \beq
+ \sum_k \Delta z \hat w_k \sin m k \pi/N =   \Delta z  \sum_n \hat w_n  \sum_k \sin n k \pi/N \sin m k \pi/N 
+ =   \Delta z  \sum_n \hat w_n  \delta_{n,m} N/2 = (h/2) \hat w_m 
+  \eeq
+The vertical modes for $\hat \v u$ and $\hat p$  should go as $\phi \sim  \cos n  (k-1/2) \pi/N $ 
+but from 
+\beq
+  \delta^-_k   \hat w   =  2  \hat w_n /\Delta z \sin  n    \pi/(2N)   \cos n  (k-1/2) \pi/N 
+\eeq
+it follows from  $- i \v k \cdot \hat{\v  u}  =  \delta^-_k   \hat w $ that modes for $\hat \v u$ and $\hat p$ are
+\beq
+\phi_k  = \frac{ \psi_k - \psi_{k-1}  }{ 2  \sin  n    \pi/(2N)  }  
+\eeq
+Now bring to the form $\v u = \v u_0 \cos n (k-1/2) \pi /N$  in  $- i \v k \cdot \hat{\v  u}  =  \delta^-_k   \hat w $ 
+\beq
+ \Delta z  \delta^-_k   \hat w /w_0  &=&  \sin n k \pi/N - \sin n (k-1) \pi/N
+ \\ &=&   \sin n k \pi/N(1 -\cos n  \pi/N )   + \cos n k \pi/N\sin n  \pi/N  
+  \\ &=&   \sin n ( (k-1/2)+ 1/2  ) \pi/N(1 -\cos n  \pi/N )   + \cos n ( (k-1/2)+ 1/2  )  \pi/N\sin n  \pi/N  
+   \\ &=&  (  \sin n (k-1/2)\pi/N \cos n  \pi/(2N) + \cos n (k-1/2)\pi/N \sin  n  \pi/(2N)     )   (1 -\cos n  \pi/N )  
+   \\ &&  + ( \cos n  (k-1/2) \pi/N \cos n    \pi/(2N)    - \sin n  (k-1/2) \pi/N \sin n    \pi/(2N)   )\sin n  \pi/N  
+   \\
+   &=& \sin n (k-1/2)\pi/N \lk  \cos n  \pi/(2N) (1 -\cos n  \pi/N )  - \sin n    \pi/(2N) \sin n  \pi/N   \rk
+   \\
+   &&
+    +  \cos n  (k-1/2) \pi/N \lk  \cos n    \pi/(2N)   \sin n  \pi/N  + \sin  n  \pi/(2N)       (1 -\cos n  \pi/N ) \rk
+    \\ &=&
+  2  \sin  n    \pi/(2N)   \cos n  (k-1/2) \pi/N 
+ \eeq
+ with $  \sin(x\pm y)=\sin x\cdot \cos y\pm \cos x\cdot \sin y$ 
+ and $ \cos(x\pm y)=\cos x\cdot \cos y\mp \sin x\cdot \sin y$
+and
+\beq
+   \cos a/2 (1 -\cos a )  - \sin a/2 \sin a %=  \cos a/2  - ( \cos a/2 \cos a   + \sin a/2 \sin a) 
+    =  \cos a/2  - \cos( a/2 - a) =0
+\eeq
+and
+\beq
+    \cos a/2 \sin a  + \sin  a/2    (1 -\cos a ) %=  \sin a \cos a/2    - \cos a  \sin  a/2  +    \sin  a/2 = \sin(a-a/2)   +    \sin  a/2 
+    = 2 \sin a/2
+\eeq
+From $\p_t \hat b  =   - N^2 \Bar{\hat w}^{k-} $ we have
+\beq
+2 \Bar{\psi }^{k-} &=&   \sin n k \pi/N + \sin n (k-1)  \pi/N
+\\ &=&   \sin n ((k-1/2) + 1/2 ) \pi/N + \sin n (k-1/2 - 1/2)  \pi/N
+\\ 
+&=&  \sin n (k-1/2)  \pi/N \cos n\pi/(2N) + \cos n (k-1/2)  \pi/N \sin n\pi/(2N)
+\\  && \sin n (k-1/2 )  \pi/N \cos n  \pi/(2N) -\cos n (k-1/2 )  \pi/N \sin  \pi/(2N) 
+\eeq
+with $  \sin(x\pm y)=\sin x\cdot \cos y\pm \cos x\cdot \sin y$ 
+
+Since 
+$\Bar{\psi }^{k-}  = \sqrt{2/h}  \sin n (k-1/2)  \pi/N \cos n\pi/(2N) $
+ the modes for $\hat  b$ are
+ \beq
+ \tilde \psi_k =  \frac{  \psi_k + \psi_{k-1}  }{2  \cos n\pi/(2N) } 
+ \eeq
+ \fi
+The orthonormal vertical modes for $\hat{\v u}_k = \sum_n \hat{\v u}_n \phi_k^n$, $\hat{p}_k = \sum_n \hat{p}_n \phi_k^n$  and 
+ $\hat{b}_k = \sum_n \hat{b}_n \tilde \psi_k^n$ are
+ \beq
+ \phi_k^n  = \frac{ \psi^n_k - \psi^n_{k-1}  }{ 2  \sin  n    \pi/(2N)  } 
+ =  \frac{ \Delta z \delta^-_k \psi_k^n  }{ 2  \sin  n    \pi \Delta z /(2h)  } 
+   ~,~
+ \tilde \psi_k^n =  \frac{  \psi^n_k + \psi^n_{k-1}  }{2  \cos n\pi/(2N) } 
+ \eeq
+ with  $\Delta z \sum_n  \phi_k^n  \phi_k^m = \delta_{n,m} $ and $\Delta z \sum_n  \tilde \psi_k^n  \tilde \psi_k^m = \delta_{n,m} $.
+  \ifdetail
+ 
+We start with
+\beq
+  i \hat k^-_x \hat u + i \hat k^-_y \hat v + \delta^-_k \hat w = 0
+  \\
+  i \hat k^-_x \sum_n \hat u_n \phi^n_k + i \hat k^-_y \sum_n \hat v_n \phi^n_k  + \sum_n \hat w_n  \delta^-_k \psi^n_k  = 0
+  \\
+    i \hat k^-_x \hat u_m 
+    + i \hat k^-_y  \hat v_m
+    + \Delta z  \sum_k  \sum_n \hat w_n ( \delta^-_k \psi^n_k ) \phi^m_k = 0
+    \\
+      i \hat k^-_x \hat u_m 
+    + i \hat k^-_y  \hat v_m
+    +   \sum_n \hat w_n 2 \sin n\pi/(2N)  \sum_k \phi^n_k     \phi^m_k = 0
+    \\
+        i \hat k^-_x \hat u_n 
+    + i \hat k^-_y  \hat v_n
+    +   \hat w_n \frac{ 2 \sin n\pi/(2N) }{ \Delta z} = 0
+\eeq
+With $\Delta z = h/N$ and $N \to \infty$ we find $\frac{ 2 \sin n\pi/(2N) }{ \Delta z} \to  n\pi /h $, so consistent.
+Next consider 
+\beq 
+\p_t \hat b  =   - N^2 \Bar{\hat w}^{k-}  ~,~\p_t \sum_n \hat b_n \tilde \psi_k  = - N^2 \sum_n\hat w_n  \Bar{\psi^n_k }^{k-} 
+\\
+\p_t \hat b_m   = - N^2 \Delta z \sum_k \sum_n\hat w_n (\psi^n_k + \psi^n_{k-1}) \tilde \psi^m_k /2
+= - N^2 \hat w_m   \cos m\pi/(2N)  
+\eeq 
+and also
+\beq
+ \p_t \hat w    = -  (\delta^+_z \hat p  -   \Bar{\hat b}^{k+} ) /\delta^2 ~,~
+  \delta^2 \p_t \sum_n \hat w_n \psi_k^n    = -  \delta^+_z \sum_n \hat p_n \phi^n_k   
+  +  \sum_n  \hat b \Bar{\tilde \psi_k^n}^{k+}
+  \\
+   \delta^2 \p_t  \hat w_m    = -   \Delta z  \sum_n \hat p_n \sum_k   \psi_k^m  \delta^+_z \phi^n_k  
+  +  \Delta z \sum_n   \hat b_n \sum_k  \psi_k^m  \Bar{\tilde \psi_k^n}^{k+}
+  \\
+     \delta^2 \p_t  \hat w_m    = -  \Delta z   \sum_n \hat p_n \sum_k   \psi_k^m  
+      \frac{ \Delta z \delta^+_z  \delta^{-}_k \psi_k^n }{ 2  \sin  n    \pi/(2N)  } 
+  + \Delta z  \sum_n   \hat b_n    \frac{\sum_k  \psi_k^m  \Bar{ \Bar{\psi_k^n}^{k-}  }^{k+}  }{  \cos n\pi/(2N) } 
+    \\
+     \delta^2 \p_t  \hat w_m    = -    \sum_n \hat p_n   \Delta z^2
+   \frac{\hat k^+_x \hat k^-_x+\hat k^+_y \hat k^-_y }{  \omega^2      - f^21_x^- 1_y^+ 1_x^+ 1_y^-}   \frac{      
+   \delta^2 \omega^2    \sum_k   \psi_k^m    \psi_k^n  - N^2  \sum_k   \psi_k^m  \Bar{ \Bar{\psi_k^n}^{k-}  }^{k+}    }{ 2  \sin  n    \pi/(2N)  } 
+  +       \hat b_m   \cos m\pi/(2N) 
+     \\
+     \delta^2 \p_t  \hat w_m    = -    \hat p_m  \Delta z
+   \frac{\hat k^+_x \hat k^-_x+\hat k^+_y \hat k^-_y }{  \omega^2      - f^21_x^- 1_y^+ 1_x^+ 1_y^-}   \frac{      
+   \delta^2 \omega^2   - N^2 \cos^2 m\pi/(2N)   }{ 2  \sin  m    \pi/(2N)  } 
+  +      \hat b_m \cos m\pi/(2N) 
+\eeq 
+with 
+\beq
+\phi_k  = \frac{ \psi_k - \psi_{k-1}  }{ 2  \sin  n    \pi/(2N)  }   =  \frac{ \Delta z \delta^{-}_k \psi_k^n }{ 2  \sin  n    \pi/(2N)  } 
+~,~
+ \tilde \psi_k =  \frac{  \Bar{\psi_k}^{k-}    }{  \cos n\pi/(2N) } 
+\eeq
+and
+ \beq
+     \delta^+_k \delta^-_k   \psi   +
+         \frac{\hat k^+_x \hat k^-_x+\hat k^+_y \hat k^-_y }{  \omega^2      - f^21_x^- 1_y^+ 1_x^+ 1_y^-}  \lk N^2   \Bar{ \Bar{\psi}^{k-}  }^{k+} -   \delta^2 \omega^2  \psi   \rk = 0
+    \eeq
+and (checked only numerically) 
+\beq
+  \Delta z   \frac{\sum_k  \psi_k^m  \Bar{ \Bar{\psi_k^n}^{k-}  }^{k+}  }{  \cos n\pi/(2N) }  = \delta_{n,m} \cos n\pi/(2N)
+\eeq
+With the fully discrete version of  $   \lambda_n^2   (\omega^2      -  f^2)     =  k^2  \lk N^2   (1 +  \cos( n  \pi/N ) ) /2 -   \delta^2 \omega^2   \rk $  and $    \lambda_n^2 = \lk   2 \sin  n  \pi/(2N )  \rk^2 / \Delta z ^2 $    we obtain
+       \beq
+     \delta^2 \p_t  \hat w_m    = -    \hat p_m  \Delta z
+   \frac{\hat k^+_x \hat k^-_x+\hat k^+_y \hat k^-_y }{  \omega^2      - f^21_x^- 1_y^+ 1_x^+ 1_y^-}   \frac{      
+   \delta^2 \omega^2   - N^2 \cos^2 m\pi/(2N)   }{ 2  \sin  m    \pi/(2N)  } 
+  +      \hat b_m \cos m\pi/(2N) 
+  \\
+    \delta^2 \p_t  \hat w_n    =      \frac{  \hat p_n  \Delta z    \lambda_n^2}{ 2  \sin  n    \pi/(2N)  } 
+  +      \hat b_n \cos n\pi/(2N) 
+   \\
+    \delta^2 \p_t  \hat w_n    =      \hat p_n  \frac{ 2 \sin n  \pi/(2N )}{   \Delta z} 
+  +      \hat b_n \cos n\pi/(2N) 
+\eeq
+use $\cos^2 x/2 =(1+\cos x)/2 $ and $\sin^2 x/2 =(1-\cos x)/2 $
+and 
+\beq
+       2( \cos( n  \pi/N )  -1  ) /\Delta z^2  =  
+         \frac{k^2}{  \omega^2      - f^2}  \lk     \delta^2 \omega^2 - N^2   (1 +  \cos( n  \pi/N ) ) /2   \rk
+         \\
+    -  4 \sin^2 n  \pi/(2N )   /\Delta z^2=   -  \lambda_n
+         =   \frac{k^2}{  \omega^2      - f^2}  \lk     \delta^2 \omega^2 - N^2     \cos^2 n  \pi/(2N)    \rk
+ \eeq
+\fi
+Using the modal representation we obtain
+\ifdetail
+\beq
+\pt{} \hat u - f 1_x^+ 1_y^- v  +  i \hat k_x^+ p = 0
+  ~~,~~
+   \pt{} \hat  v + f 1_x^- 1_y^+ u +  i \hat k_y^+ p = 0
+\\
+   i \hat k^-_x \hat u_n 
+    + i \hat k^-_y  \hat v_n
+    +   \hat w_n \frac{ 2 \sin n\pi/(2N) }{ \Delta z} = 0
+  ~,~  \p_t \hat b_m   = - N^2 \hat w_m   \cos m\pi/(2N)  
+  \\
+    \delta^2 \p_t  \hat w_n    =      \hat p_n  \frac{ 2 \sin n  \pi/(2N )}{   \Delta z} 
+  +      \hat b_n \cos n\pi/(2N) 
+\eeq
+Rewriting as 
+\fi
+  \beq
+  \pt{} \hat u  =  -i^2 f 1_x^+ 1_y^- v  -  i \hat k_x^+ p 
+  ~~,~~
+   \pt{} \hat  v = i^2 f 1_x^- 1_y^+ u -  i \hat k_y^+ p 
+\\
+  \p_t \hat b_n   = i^2 N^2 \hat w_n   \cos n\pi/(2N)~,~
+   \p_t p = -c_s i \lk       \hat k^-_x \hat u_n +  \hat k^-_y  \hat v_n - i    \hat w_n\lambda_n  \rk
+    \\
+       \delta^2 \p_t  \hat w_n    =   -i^2   \hat p_n \lambda_n    -i^2      \hat b_n \cos n\pi/(2N) 
+  \eeq
+  with $\lambda_n = \frac{ 2 \sin n\pi/(2N) }{ \Delta z}$, 
+  and so for $\p_t \v z = i \v A \cdot \v z $ (note that eigenvalues $\omega$ will have opposite sign)
+  \beq
+\v A = \left(\begin{array}{ccccc}  
+0 & -i f 1_x^+ 1_y^- & 0 & 0 & - \hat  k^+_x \\  
+i f1_x^- 1_y^+ & 0 & 0 & 0 &  - \hat k^+_y  \\   
+0  & 0 & 0 & -(i /\delta^2) \cos n\pi/(2N)   & -  i \lambda_n   /\delta^2  \\
+0  & 0 &  i N^2  \cos n\pi/(2N) &0 &  0    \\
+- c_s^2 \hat k^-_x &   -  c_s^2  \hat k^-_y &  c_s^2 i \lambda_n   & 0 & 0  \end{array}\right)  
+~~,~~\v z = \Vec{ \hat u_n \\ \hat v_n \\   \hat w_n \\ \hat b_n \\ \hat  p_n}
+ \eeq
+ Difference to vertically propagating version below is that $ \hat 1_z^\pm \to  \cos n\pi/(2N)$
+ and $\hat k_z^\pm \to \pm i \lambda_n $. 
+Right eigenvectors are given by
+\ifdetail
+\beq
+ \omega u = -i f1_x^+ 1_y^- v  -  \hat k_x^+  p ~,~
+ \omega v = i f1_x^- 1_y^+  u -    \hat k_y^+  p
+  \\
+ \omega w =   - i   b/\delta^2 \cos n\pi/(2N)  -   i \lambda_n  p/\delta^2  ~,~
+\omega b = i N^2  w \cos n\pi/(2N) 
+\eeq
+
+
+\beq
+ \omega u = -i f1_x^+ 1_y^- v  -  \hat k_x^+  p ~~\to~~ 
+  ( \omega^2 - f^2  1_x^+ 1_y^-  1_x^- 1_y^+ ) u =   (    i f1_x^+ 1_y^-   \hat k_y^+     -  \hat k_x^+   \omega ) p  
+\\
+ \omega v = i f1_x^- 1_y^+  u  -   \hat k_y^+  p ~~\to~~
+ (  \omega^2 -f^2 1_x^+ 1_y^-  1_x^- 1_y^+ ) v =   (- i f1_x^- 1_y^+  \hat k_x^+    -    \hat k_y^+  \omega )  p
+  \\
+ \delta^2 \omega w =   - i  \cos n\pi/(2N) b  -   i \lambda_n  p ~~\to~~
+ ( \delta^2 \omega^2 - N^2  \cos^2 n\pi/(2N) ) w =      -    i \lambda_n   \omega p
+\\
+\omega b = i N^2 \cos n\pi/(2N)  w ~~\to~~ 
+(\delta^2 \omega^2 -N^2 \cos^2 n\pi/(2N))  b =  -  i N^2 \cos n\pi/(2N)    i \lambda_n  p 
+\eeq
+
+\beq
+\hat  u =  \frac{     i f1_x^+ 1_y^-   \hat k_y^+     -  \hat k_x^+   \omega }{  \omega^2 - f^2  1_x^+ 1_y^-  1_x^- 1_y^+} 
+~~,~~ \hat v = \frac{  - i f1_x^- 1_y^+  \hat k_x^+    -    \hat k_y^+  \omega   } {    \omega^2 -f^2 1_x^+ 1_y^-  1_x^- 1_y^+ } 
+\\ \hat w =     \frac{  -   i \lambda_n   \omega  }{ \delta^2  \omega^2 - N^2 \cos^2 n\pi/(2N)   }  
+~~,~~\hat b =   \frac{ N^2  \lambda_n \cos n\pi/(2N)          }{  \delta^2 \omega^2 -N^2 \cos^2 n\pi/(2N)  }   
+\eeq
+\fi
+\beq
+ \v q = \lk 
+  \frac{   -   i f1_x^+ 1_y^-   \hat k_y^+     +  \hat k_x^+   \omega }{  f^2  1_x^+ 1_y^-  1_x^- 1_y^+ -  \omega^2 }  ~,~
+   \frac{  i f1_x^- 1_y^+  \hat k_x^+    +    \hat k_y^+  \omega   } {  f^2  1_x^+ 1_y^-  1_x^- 1_y^+ -    \omega^2  }  ~,~ 
+     \frac{    i \lambda_n    \omega  }{  N^2  \cos^2 n\pi/(2N)  - \delta^2  \omega^2  } ~ ,~ 
+      \frac{ - N^2 \lambda_n  \cos n\pi/(2N)       }{N^2 \cos^2 n\pi/(2N)  -  \delta^2  \omega^2 }  
+  \rk^T
+\eeq
+The left eigenvectors are given by
+\ifdetail
+
+Difference to vertically propagating version below is that $ \hat 1_z^\pm \to  \cos n\pi/(2N)$
+ and $\hat k_z^\pm \to \pm i \lambda_n $. 
+\beq
+ \omega u_l = if  1_x^- 1_y^+  v_l - c_s^2 \hat k_x^-   p_l ~,~  \omega v_l = - if 1_x^+ 1_y^- u_l - c^2 \hat k_y^-  p_l  
+\\ 
+ \omega    \hat w_l = i N^2 \cos n\pi/(2N)  b_l + c^2  i \lambda_n \hat   p_l  
+~,~
+  \omega b_l = - i  \cos n\pi/(2N) \hat w_l   /\delta^2
+  \eeq
+
+
+\beq
+ \omega u = if  1_x^- 1_y^+  v - c_s^2 \hat k_x^-   p ~~,~~  \omega v = - if 1_x^+ 1_y^- u - c^2 \hat k_y^-  p  \\
+ ( \omega^2 -f^2  1_x^+ 1_y^-  1_x^- 1_y^+)  u =      ( - if  1_x^- 1_y^+ \hat k_y^-    - \hat k_x^-   \omega ) c^2 p 
+\\ 
+ ( \omega^2 -  f^2  1_x^- 1_y^+ 1_x^+ 1_y^- )  v =   ( +   if 1_x^+ 1_y^- \hat k_x^-      -  \hat k_y^- \omega ) c^2   p  \\
+ \omega    \hat w_l = i N^2  \cos n\pi/(2N)   b_l +  c^2 i \lambda_n p_l  
+ ~~,~~    (\delta^2  \omega^2   -N^2  \cos^2 n\pi/(2N)  )  \hat w_l =    c^2 i \lambda_n  \omega p_l  \delta^2  
+ \\ \omega b_l = - i  \cos n\pi/(2N)   w_l /\delta^2 ~~,~~   ( \delta^2 \omega^2 -N^2   \cos^2 n\pi/(2N)) b_l 
+ =    c^2   \cos n\pi/(2N)  \lambda_n p_l     
+  \eeq
+  
+  \beq
+ \hat  u_l =  \frac{ - if  1_x^- 1_y^+ \hat k_y^-    - \hat k_x^-   \omega   }{ \omega^2 -f^2  1_x^+ 1_y^-  1_x^- 1_y^+} 
+ ~~,~~
+ \hat  v_l =  \frac{    if 1_x^+ 1_y^- \hat k_x^-      -  \hat k_y^- \omega   }{\omega^2 -  f^2  1_x^- 1_y^+ 1_x^+ 1_y^- } 
+  ~~,~~
+ \hat w_l =     -\frac{ -i \lambda_n  \omega  \delta^2 }{  \delta^2 \omega^2   -N^2 \cos^2 n\pi/(2N)  }  
+ \\
+ \hat b_l =  \frac{     \cos n\pi/(2N)   \lambda_n }{ \delta^2  \omega^2   -N^2  \cos^2 n\pi/(2N)  } 
+\eeq
+
+\fi
+\beq
+ \v p = p_s \lk 
+ \frac{  if  1_x^- 1_y^+ \hat k_y^-    + \hat k_x^-   \omega   }{f^2  1_x^+ 1_y^-  1_x^- 1_y^+ -  \omega^2 }  ~,~
+  \frac{ -   if 1_x^+ 1_y^- \hat k_x^-      +  \hat k_y^- \omega   }{ f^2  1_x^- 1_y^+ 1_x^+ 1_y^-  -\omega^2   } ~,~
+    \frac{ -i \lambda_n  \omega  \delta^2 }{ N^2  \cos^2 n\pi/(2N)  -  \delta^2 \omega^2    }  ~,~
+     \frac{ -   \lambda_n  \cos n\pi/(2N)   }{N^2 \cos^2 n\pi/(2N) -  \delta^2  \omega^2    } 
+     \rk
+\eeq
+It holds that $\v p = p_s( q_u^*,q_v^*,q_w^* \delta^2, q_b/N^2  )^T$. 
+Orthonormalisation with
+\ifdetail
+
+Difference to vertically propagating version below is that $ \hat 1_z^\pm \to  \cos n\pi/(2N)$
+ and $\hat k_z^\pm \to \pm i \lambda_n $. 
+\beq
+   \v q \cdot \v p =   p_0 \lk    \frac{        \hat k_y^+    \hat k_y^-   +    \hat k_x^+     \hat k_x^-     }{  f^2    1_x^- 1_y^+1_x^+ 1_y^-    } 
+   +    \frac{   \lambda^2_n     }{  N^2 \cos^2 n\pi/(2N)    } 
+   \rk 
+   = p_0 \frac{ (    \hat k_y^+    \hat k_y^-   +    \hat k_x^+     \hat k_x^- )  N^2 \cos^2 n\pi/(2N)  
+     +   \lambda^2_n     f^2    1_x^- 1_y^+1_x^+ 1_y^- }
+   { f^2    1_x^- 1_y^+1_x^+ 1_y^-   N^2 \cos^2 n\pi/(2N)      }
+   \\
+   p_0 = \frac { f^2    1_x^- 1_y^+1_x^+ 1_y^-   N^2 \cos^2 n\pi/(2N)    }
+   { (    \hat k_y^+    \hat k_y^-   +    \hat k_x^+     \hat k_x^- )  N^2 \cos^2 n\pi/(2N)   +   \lambda^2_n     f^2    1_x^- 1_y^+1_x^+ 1_y^- }
+  %
+\eeq
+
+
+\beq
+ \v q \cdot \v p = p_s \lk 
+  \frac{   ( f^2 1_x^+  1_y^-    1_y^+    1_x^- + \omega^2  )    (   k_y^+   k_y^-    +      k^+_x       k_x^-       )     
+    }{(1_y^+   1_x^-    1_x^+    1_y^-  f^2 -  \omega^2   )^2 }
++
+         \frac{   \lambda^2_n    \omega^2    \delta^2  +  N^2  \cos^2 n\pi/(2N)    \lambda^2_n  
+           }{(N^2   \cos^2 n\pi/(2N)  -  \delta^2  \omega^2)^2  }  
+  \rk
+\eeq
+and thus using the same operations as above
+\beq
+ p_\pm =  \frac{(N^2 \cos^2 n\pi/(2N)      -  \delta^2 \omega^2) ( \omega^2 - f^2 1_x^+  1_y^-    1_y^+    1_x^-)} 
+ { 2(     \lambda^2_n      f^2  1_x^+  1_y^-    1_y^+    1_x^- +  (   k_y^+   k_y^-    +      k^+_x       k_x^-       )  
+      N^2\cos^2 n\pi/(2N)   )  }
+%
+\eeq
+
+\fi
+\beq
+ p_0 &=& \frac { f^2    1_x^- 1_y^+1_x^+ 1_y^-   N^2 \cos^2 n\pi/(2N)       }
+   {      \lambda^2_n     f^2    1_x^- 1_y^+1_x^+ 1_y^-   
+   + (    \hat k_y^+    \hat k_y^-   +    \hat k_x^+     \hat k_x^- )  N^2  \cos^2 n\pi/(2N)  }
+   \\
+    p_\pm &=&  \frac{1}{2} \frac{(N^2  \cos^2 n\pi/(2N)        -  \delta^2 \omega^2) ( \omega^2 - f^2 1_x^+  1_y^-    1_y^+    1_x^-)} 
+ {      \lambda^2_n    f^2  1_x^+  1_y^-    1_y^+    1_x^- +  (   k_y^+   k_y^-    +      k^+_x       k_x^-       ) N^2   \cos^2 n\pi/(2N)    }
+   \eeq
+
+
+
+\subsection*{PV and eigenvectors}
+
+Linear PV is $Q N^2/Ro  = f  \p_z b + N^2 \zeta$. From 
+\beq
+ \v q^\pm = \lk  \frac{  i f \rvec{\v k}    +\v  k \omega }{ f^2-\omega^2 }   ~,~
+    \frac{m \omega}{ N^2 - \delta^2 \omega^2}   ~,~
+     \frac{i mN^2 }{ N^2 - \delta^2 \omega^2 }   \rk^T 
+ \eeq
+it follows that
+\beq
+  \zeta &=&  
+   \frac{    i f k_x^2     + k_x  k_y \omega }{ f^2-\omega^2 }  
+    -  \frac{    -i f k_y^2    + k_y k_x  \omega }{ f^2-\omega^2 }   =  i f  \frac{     k_x^2     +k_y^2     }{ f^2-\omega^2 }  
+    \\
+    Q N^2/Ro  &=&  i f  N^2 \lk   \frac{m^2 }{ N^2 - \delta^2 \omega^2 }   +      \frac{     k_x^2     +k_y^2     }{ f^2-\omega^2 }   \rk
+    \\
+   & =&   i f  N^2   \frac{m^2( f^2-\omega^2 ) +  k^2 ( N^2 - \delta^2 \omega^2 )  }{ (N^2 - \delta^2 \omega^2) ( f^2-\omega^2)  } 
+    \\
+   &=&   i f  N^2   \frac{ k^2 \delta^2  \omega^2   + m^2  \omega^2   - m^2 \omega^2 - \delta^2 k^2  \omega^2   }{ (N^2 - \delta^2 \omega^2) ( f^2-\omega^2)  } 
+     = 0 
+\eeq
+with the dispersion relation $k^2 N^2  +f^2 m^2  =  ( k^2 \delta^2  + m^2 ) \omega^2   $.
+
+
+ 
+\subsection*{Eigenvectors again}
+
+
+For $c_s\to \infty$ we have $\vn \cdot \v u + \p_z w = 0$ and
+\beq
+% \p_t  \vn \cdot   \v u  +\vn \cdot   f \rvec{ \v u} +\vn^2   p  =   0   ~,~
+%  \p_t \p_z  w   + (\p_{zz} p  - \p_z   b) /\delta^2  = 0 
+ % \\ 
+  \delta^2 \vn^2   p   + \p_{zz} p =    \p_z   b - \delta^2 f  \vn \cdot    \rvec{ \v u}  =   \p_z   b  + \delta^2 f   (\p_x v - \p_y u )  
+%  \\
+ %-  ( \delta^2   k^2   +m^2 )\hat  p = im \hat b +  i  \delta^2 f  \rvec{ \v k}  \cdot \v u  =  im \hat b +  i  \delta^2 f (-k_y u + k_x v) 
+% \\
+~\to~
+ \hat p =-i  \frac{  m \hat b  +   \delta^2 f  \rvec{ \v k}  \cdot \v u }{ \delta^2   k^2   +m^2  } 
+\eeq
+and so 
+\ifdetail
+\beq
+ \p_t  \v u   &=& i \lk       i f \rvec{ \v u} +   i \v k   \frac{  m \hat b  }{ \delta^2   k^2   +m^2  }  
+ + i  \v k   \frac{    \delta^2 f  (-k_y u + k_x v)  }{ \delta^2   k^2   +m^2  }   \rk
+  \\
+  \p_t w     &=&  i \lk   -i  \frac{     k^2   }{ \delta^2   k^2   +m^2  }    \hat b
+ +   i m   \frac{  f   (-k_y u + k_x v)  }{ \delta^2   k^2   +m^2  }   
+    \rk 
+  \\
+\p_t b  &=& i (  i  N^2 w) 
+ \eeq
+ or
+ \fi
+ \beq
+\v A = \left(\begin{array}{cccc}  
+ - i  k_x   \frac{    \delta^2 f  k_y   }{ \delta^2   k^2   +m^2  }    & -i f + i  f  \frac{    \delta^2    k_x^2   }{ \delta^2   k^2   +m^2  }
+ & 0 &    \frac{  ik_x  m  }{ \delta^2   k^2   +m^2  }    \\  
+i f  - i  f   \frac{    \delta^2   k_y^2   }{ \delta^2   k^2   +m^2  }   & 
+ i  k_y   \frac{    \delta^2 f   k_x   }{ \delta^2   k^2   +m^2  }  & 0 &      \frac{  i k_ym  }{ \delta^2   k^2   +m^2  }     \\   
+ -   i m   \frac{  f   k_y    }{ \delta^2   k^2   +m^2  }      & 
+  +   i m   \frac{  f    k_x   }{ \delta^2   k^2   +m^2  }    & 0 & -i \frac{     k^2   }{ \delta^2   k^2   +m^2  }    \\
+0  & 0 &  i N^2  &0
+\end{array}\right)  
+~~,~~\v z = \Vec{ \hat u \\ \hat v \\   \hat w \\ \hat b }
+ \eeq
+ \ifdetail
+ Eigenvalues $\omega \v q = \v A \cdot \v q~\to~ \lk  \v A - \v 1 \omega \rk \cdot \v q = 0$ from 
+ \beq
+ 0 = \left|\begin{array}{cccc}  
+\omega K^2 - i  k_x     \delta^2 f  k_y    & -i f K^2 + i  f    \delta^2    k_x^2  
+ & 0 &   ik_x  m   \\  
+i f K^2  - i  f  \delta^2   k_y^2  & 
+ \omega K^2 + i  k_y    \delta^2 f   k_x   & 0 &     i k_ym    \\   
+ -   i m   f   k_y     & 
+  +   i m   f    k_x     & \omega K^2 & -ik^2  \\
+0  & 0 &  i N^2 K^2   & \omega  K^2 
+\end{array}\right|  
+\\ 
+= ( \omega K^2 - i  k_x     \delta^2 f  k_y ) 
+\left|\begin{array}{ccc}  
+ \omega K^2 + i  k_y    \delta^2 f   k_x   & 0 &     i k_ym    \\   
+  +   i m   f    k_x     & \omega K^2 & -ik^2  \\
+ 0 &  i N^2 K^2   & \omega  K^2 
+\end{array}\right|  
+\\
+- ( -i f K^2 + i  f    \delta^2    k_x^2  )
+\left|\begin{array}{ccc}  
+i f K^2  - i  f  \delta^2   k_y^2   & 0 &     i k_ym    \\   
+ -   i m   f   k_y     & 
+   \omega K^2 & -ik^2  \\
+0   &  i N^2 K^2   & \omega  K^2 
+\end{array}\right|  
+\\
+- ik_x  m 
+ \left|\begin{array}{ccc}  
+i f K^2  - i  f  \delta^2   k_y^2  & 
+ \omega K^2 + i  k_y    \delta^2 f   k_x   & 0    \\   
+ -   i m   f   k_y     & 
+  +   i m   f    k_x     & \omega K^2   \\
+0  & 0 &  i N^2 K^2   
+\end{array}\right|  
+\\
+= ( \omega K^2 - i  k_x     \delta^2 f  k_y ) \lk 
+%
+( \omega K^2 + i  k_y    \delta^2 f   k_x ) 
+\left|\begin{array}{cc}  
+  \omega K^2 & -ik^2  \\
+ i N^2 K^2   & \omega  K^2 
+\end{array}\right|  
++  i k_ym  
+\left|\begin{array}{cc}  
+   +   i m   f    k_x     & \omega K^2  \\
+ 0 &  i N^2 K^2  
+\end{array}\right|   
+\rk
+%
+\\
+%
+- ( -i f K^2 + i  f    \delta^2    k_x^2  ) \lk 
+(i f K^2  - i  f  \delta^2   k_y^2  ) 
+\left|\begin{array}{cc}  
+   \omega K^2 & -ik^2  \\
+ i N^2 K^2   & \omega  K^2 
+\end{array}\right|  
++ i k_ym 
+\left|\begin{array}{cc}  
+ -   i m   f   k_y     & 
+   \omega K^2   \\
+0   &  i N^2 K^2 
+\end{array}\right|  
+%
+\rk
+\\
+%
+- ik_x  m  \lk 
+%
+(i f K^2  - i  f  \delta^2   k_y^2) 
+ \left|\begin{array}{cc}  
+  +   i m   f    k_x     & \omega K^2   \\
+ 0 &  i N^2 K^2   
+\end{array}\right|  
+- ( \omega K^2 + i  k_y    \delta^2 f   k_x  )
+ \left|\begin{array}{cc}  
+ -   i m   f   k_y     & 
+   \omega K^2   \\
+0 &  i N^2 K^2   
+\end{array}\right|  
+%
+\rk 
+\eeq
+
+\beq
+= ( \omega K^2 - i  k_x     \delta^2 f  k_y ) \lk 
+%
+( \omega K^2 + i  k_y    \delta^2 f   k_x ) 
+( \omega^2 K^4  -  k^2 N^2 K^2  ) 
+-  i k_y  m^2    f    k_x    N^2 K^2    
+\rk
+%
+\\
+%
+- ( -i f K^2 + i  f    \delta^2    k_x^2  ) \lk 
+(i f K^2  - i  f  \delta^2   k_y^2  ) 
+(  \omega^2 K^4 - k^2  N^2 K^2 ) 
++ i m^2    f   k_y^2      N^2 K^2  
+%
+\rk
+\\
+%
+- ik_x  m  \lk 
+%
+(i f K^2  - i  f  \delta^2   k_y^2) 
+(   - m   f    k_x      N^2 K^2   ) 
+- ( \omega K^2 + i  k_y    \delta^2 f   k_x  )
+ m   f   k_y     N^2 K^2   
+%
+\rk 
+\eeq
+
+\beq
+= ( \omega K^2 - i  k_x     \delta^2 f  k_y ) \lk  ( \omega K^2 + i  k_y    \delta^2 f   k_x )  ( \omega^2 K^2  -  k^2 N^2   ) -  i k_y  m^2    f    k_x    N^2    
+\rk
+\\
+- ( -i f K^2 + i  f    \delta^2    k_x^2  ) \lk (i f K^2  - i  f  \delta^2   k_y^2  ) (  \omega^2 K^2 - k^2  N^2  ) + i m^2    f   k_y^2      N^2   
+\rk
+\\
+- ik_x  m^2 N^2 f  \lk  - (i f K^2  - i  f  \delta^2   k_y^2)          k_x          - ( \omega K^2 + i  k_y    \delta^2 f   k_x  )      k_y      
+\rk 
+\eeq
+
+\beq
+=   ( \omega K^2 - i  k_x     \delta^2 f  k_y )  ( \omega K^2 + i  k_y    \delta^2 f   k_x )  ( \omega^2 K^2  -  k^2 N^2   ) 
+-   ( \omega K^2 - i  k_x     \delta^2 f  k_y ) i k_y  m^2    f    k_x    N^2    
+\\
+-   ( -i f K^2 + i  f    \delta^2   k_x^2  )  (i f K^2  - i  f  \delta^2   k_y^2  ) (  \omega^2 K^2 - k^2  N^2  ) 
+-  m^2    f^2   k_y^2      N^2   (   K^2 -     \delta^2    k_x^2  )
+\\ 
+- k_x^2  m^2 N^2 f^2  ( K^2  -  \delta^2   k_y^2)             +  ik_x    k_y m^2 N^2 f ( \omega K^2 + i  k_y    \delta^2 f   k_x  )          
+\eeq
+
+\beq
+=   ( \omega K^2 - i  k_x     \delta^2 f  k_y )  ( \omega K^2 + i  k_y    \delta^2 f   k_x )  ( \omega^2 K^2  -  k^2 N^2   )  
+\\
+-   ( -i f K^2 + i  f    \delta^2    k_x^2  )  (i f K^2  - i  f  \delta^2   k_y^2  ) (  \omega^2 K^2 - k^2  N^2  ) 
+-  m^2    f^2   k^2      N^2      K^2 
+\eeq
+
+
+\beq
+=   ( \omega^2 K^4    +  k_x^2     \delta^2   k_y^2     \delta^2 f^2   )  ( \omega^2 K^2  -  k^2 N^2   )  
+\\
+-     ( + f^2 K^4   - f^2  \delta^2   k^2   K^2          +  f^2  \delta^2   k_y^2      \delta^2    k_x^2    ) 
+  (  \omega^2 K^2 - k^2  N^2  ) 
+-  m^2    f^2   k^2      N^2      K^2 
+\eeq
+
+\beq
+=   ( \omega^2 K^2 - f^2 K^2   + f^2  \delta^2   k^2      )  ( \omega^2 K^2  -  k^2 N^2   )  
+-  m^2    f^2   k^2      N^2     
+\eeq
+
+\beq
+0 =   \omega^4 K^4     -  k^2 N^2    \omega^2 K^2       -   f^2 K^2   \omega^2 K^2      
+  +    \omega^2 K^2 f^2  \delta^2   k^2  
+\eeq
+\fi
+Eigenvalues of $\v A$ are 
+\beq
+\omega^2 = 0 ~,~
+0 =   \omega^2 K^2     -  k^2 N^2           -   f^2 m^2
+\eeq
+ with $K^2 = \delta^2 k^2 + m^2$. Note that there is an additional zero eigenvalue.
+ %
+ \ifdetail
+Eigenvectors from
+\beq
+ \omega u K^2 = 
+ - i  k_x     \delta^2 f  k_y    u   + i  f v \lk   \delta^2   k_x^2  - K^2  \rk+    ik_x  m   b 
+\\
+\omega v K^2 = 
+ - i  f  u \lk   \delta^2   k_y^2     -K^2  \rk  
++  i  k_y   \delta^2 f   k_x   v  +  i k_ym b
+\\
+\omega w K^2 = 
+ -   i m  f   k_y      u  
+  +   i m   f    k_x v      -i  k^2   b
+  \\
+  \omega b =  i N^2 w 
+\eeq
+with $K^2 =  \delta^2   k^2   +m^2$ 
+\beq
+ \omega u K^2 =   - i  k_x     \delta^2 f  k_y    u   - i  f v \lk    \delta^2 k_y^2 + m^2  \rk+    ik_x  m   b 
+\\
+\omega v K^2 =  + i  f  u \lk    \delta^2   k_x^2   +m^2   \rk   +  i  k_y   \delta^2 f   k_x   v  +  i k_ym b
+\\
+\omega w K^2 =  -   i m  f   k_y      u    +   i m   f    k_x v    -i  k^2   b
+  \\
+  \omega b =  i N^2 w 
+\eeq
+
+\beq
+\lk  \omega  K^2 +  i  k_x     \delta^2 f  k_y  \rk  u  =  - i  f v \lk    \delta^2 k_y^2 + m^2  \rk+    ik_x  m    b
+\\
+\lk \omega  K^2 -   i  k_y   \delta^2 f   k_x  \rk  v =  + i  f  u \lk    \delta^2   k_x^2   +m^2   \rk    +  i k_ym b
+\eeq
+
+\beq
+\lk  \omega  K^2 +  i  k_x     \delta^2 f  k_y  \rk \lk \omega  K^2 -   i  k_y   \delta^2 f   k_x  \rk  u  
+=  - i  f \lk  + i  f  u \lk    \delta^2   k_x^2   +m^2   \rk    +  i k_ym b \rk 
+\lk    \delta^2 k_y^2 + m^2  \rk
+\\
++    ik_x  m  \lk \omega  K^2 -   i  k_y   \delta^2 f   k_x  \rk  b
+\eeq
+\beq
+\lk  \omega  K^2 +  i  k_x     \delta^2 f  k_y  \rk \lk \omega  K^2 -   i  k_y   \delta^2 f   k_x  \rk  u  
+=     f^2  u \lk    \delta^2   k_x^2   +m^2   \rk \lk    \delta^2 k_y^2 + m^2  \rk    
+\\ +       \lk f  k_y      +  \omega   ik_x      \rk  K^2 m b
+\eeq
+with $\omega^2 K^2 = f^2 m^2 + N^2 k^2$ 
+\beq
+ N^2 k^2      u   =    \lk f  k_y      +  \omega   ik_x      \rk m b
+\eeq
+Then is follows from symmetry that
+\beq
+ N^2 k^2      v  =    \lk-  f  k_x      +  \omega   ik_y     \rk m b
+\eeq
+and
+\beq
+ w      =-i \omega  b /N^2 
+  \eeq
+  \fi
+Right  eigenvectors are
+ \beq
+ \v q = \lk   \frac{   \lk f  k_y      +  \omega   ik_x      \rk m } { N^2 k^2 } ~,~
+\frac{     \lk-  f  k_x      +  \omega   ik_y     \rk m  } { N^2 k^2 } ~,~
+-i \omega   /N^2 
+~,~ 1 
+ \rk^T 
+ \eeq
+ Multiply with   $  \frac{i mN^2 }{ N^2 - \delta^2 \omega^2 }  $ to obtain previous ones
+   \beq
+     \frac{   \lk f  k_y      +  \omega   ik_x      \rk m } { N^2 k^2 }  \frac{i mN^2 }{ N^2 - \delta^2 \omega^2 } 
+     = 
+          \lk i f  k_y      -  \omega   k_x      \rk  \frac{m^2  }{ k^2 ( N^2 - \delta^2 \omega^2)  } 
+          =    \frac{ \lk i f  k_y      -  \omega   k_x      \rk  }{( \omega^2-f^2 )    } 
+           \eeq
+  with $( \omega^2-f^2 ) m^2  =  (N^2 -\omega^2 \delta^2) k^2$, which is the same
+  as the first component of previous ones. 
+Left eigenvector follow then from symmetry relation
+\beq
+\v q  = (q_u,q_v,q_w,q_b,q_p)^T  ~,~
+ \v p =p_s ( q_u^* , q_u^* , q_w \delta^2 , q_b^* /N^2 )
+\eeq
+
+  
+  
+\subsection*{Discrete eigenvalues}
+
+ The discrete system matrix becomes
+  \beq
+\v A = \left(\begin{array}{ccccc}  
+0 & -i f 1_x^+ 1_y^- & 0 & 0 & - \hat k_x^+  \\  
+i f 1_x^- 1_y^+ & 0 & 0 & 0 &  - \hat k_y^+  \\   
+0  & 0 & 0 & -i  \hat 1_z^+/\delta^2  &  - \hat k_z^+ /\delta^2  \\
+0  & 0 &  i N^21_z^-   &0 &  0    \\
+- c_s^2 \hat k_x^- &   -  c_s^2  \hat k_y^- & - c_s^2 \hat k_z^- & 0 & 0  \end{array}\right)  
+~~,~~\v z = \Vec{ \hat u \\ \hat v \\ \hat w \\ \hat b \\ \hat  p}
+ \eeq
+which is similar to the continuous case.
+Discrete eigenvalues for $c\to \infty $ are given by
+  \beq
+  \omega=0  ~,~     f^2 1_x^+ 1_y^-  1_x^- 1_y^+   \hat k_z^+  \hat k_z^-   
+  +N^2 1_z^+  1_z^-  ( \hat k_y^+  \hat k_y^- + \hat k_x^+ \hat k_x^-  )
+    =
+   \omega^2  (  \hat k_z^+  \hat k_z^-      
+   +    \delta^2 \hat k_y^+  \hat k_y^- +   \delta^2  \hat k_x^+ \hat k_x^-   )
+ \eeq
+Right eigenvectors are given by
+\ifdetail
+\beq
+ \omega u = -i f1_x^+ 1_y^- v  -  \hat k_x^+  p ~,~
+ \omega v = i f1_x^- 1_y^+  u -    \hat k_y^+  p
+  ~,~
+ \omega w =   - i  \hat 1_z^+ b/\delta^2  -  \hat k_z^+  p/\delta^2  ~,~
+\omega b = i N^2 1_z^-  w 
+\eeq
+
+
+\beq
+ \omega u = -i f1_x^+ 1_y^- v  -  \hat k_x^+  p ~~\to~~ 
+  ( \omega^2 - f^2  1_x^+ 1_y^-  1_x^- 1_y^+ ) u =   (    i f1_x^+ 1_y^-   \hat k_y^+     -  \hat k_x^+   \omega ) p  
+\\
+ \omega v = i f1_x^- 1_y^+  u  -   \hat k_y^+  p ~~\to~~
+ (  \omega^2 -f^2 1_x^+ 1_y^-  1_x^- 1_y^+ ) v =   (- i f1_x^- 1_y^+  \hat k_x^+    -    \hat k_y^+  \omega )  p
+  \\
+ \delta^2 \omega w =   - i  \hat 1_z^+ b  -  \hat k_z^+  p ~~\to~~
+ ( \delta^2 \omega^2 - N^2  1_z^+ 1_z^- ) w =      -   \hat k_z^+   \omega p
+\\
+\omega b = i N^2 1_z^-  w ~~\to~~ 
+(\delta^2 \omega^2 -N^2 1_z^-  1_z^+)  b =  -  i N^2 1_z^-   \hat k_z^+  p 
+\eeq
+
+\beq
+\hat  u =  \frac{     i f1_x^+ 1_y^-   \hat k_y^+     -  \hat k_x^+   \omega }{  \omega^2 - f^2  1_x^+ 1_y^-  1_x^- 1_y^+} 
+~~,~~ \hat v = \frac{  - i f1_x^- 1_y^+  \hat k_x^+    -    \hat k_y^+  \omega   } {    \omega^2 -f^2 1_x^+ 1_y^-  1_x^- 1_y^+ } 
+~~,~~\hat w =     \frac{  -  \hat k_z^+   \omega  }{ \delta^2  \omega^2 - N^2  1_z^+ 1_z^- }  
+~~,~~\hat b =   \frac{-  i N^2 1_z^-   \hat k_z^+    }{  \delta^2 \omega^2 -N^2 1_z^-  1_z^+}   
+\eeq
+\fi
+\beq
+ \v q = \lk 
+  \frac{   -   i f1_x^+ 1_y^-   \hat k_y^+     +  \hat k_x^+   \omega }{  f^2  1_x^+ 1_y^-  1_x^- 1_y^+ -  \omega^2 }  ~,~
+   \frac{  i f1_x^- 1_y^+  \hat k_x^+    +    \hat k_y^+  \omega   } {  f^2  1_x^+ 1_y^-  1_x^- 1_y^+ -    \omega^2  }  ~,~ 
+     \frac{    \hat k_z^+   \omega  }{  N^2  1_z^+ 1_z^- - \delta^2  \omega^2  } ~ ,~ 
+      \frac{ i N^2 1_z^-   \hat k_z^+    }{N^2 1_z^-  1_z^+ -  \delta^2  \omega^2 }  
+  \rk^T
+\eeq
+which is analogous to the analytical version.
+The left eigenvectors are given by
+\ifdetail
+\beq
+ \omega u_l = if  1_x^- 1_y^+  v_l - c_s^2 \hat k_x^-   p_l ~,~  \omega v_l = - if 1_x^+ 1_y^- u_l - c^2 \hat k_y^-  p_l  
+~,~
+ \omega    \hat w_l = i N^2 1_z^-  b_l - c^2 \hat k_z^- p_l  
+~,~
+  \omega b_l = - i \hat 1_z^+  w_l   /\delta^2
+  \eeq
+
+
+\beq
+ \omega u = if  1_x^- 1_y^+  v - c_s^2 \hat k_x^-   p ~~,~~  \omega v = - if 1_x^+ 1_y^- u - c^2 \hat k_y^-  p  \\
+ ( \omega^2 -f^2  1_x^+ 1_y^-  1_x^- 1_y^+)  u =      ( - if  1_x^- 1_y^+ \hat k_y^-    - \hat k_x^-   \omega ) c^2 p 
+\\ 
+ ( \omega^2 -  f^2  1_x^- 1_y^+ 1_x^+ 1_y^- )  v =   ( +   if 1_x^+ 1_y^- \hat k_x^-      -  \hat k_y^- \omega ) c^2   p  \\
+ \omega    \hat w_l = i N^2 1_z^-  b_l -  c^2 \hat k_z^- p_l  
+ ~~,~~    (\delta^2  \omega^2   -N^2 1_z^-  1_z^+  )  \hat w_l =   - c^2 \hat k_z^-  \omega p_l  \delta^2  
+ \\ \omega b_l = - i \hat 1_z^+  w_l /\delta^2 ~~,~~   ( \delta^2 \omega^2 -N^2  \hat 1_z^+ 1_z^-) b_l =     i c^2  \hat 1_z^+ \hat k_z^- p_l     
+  \eeq
+  
+  \beq
+ \hat  u_l =  \frac{ - if  1_x^- 1_y^+ \hat k_y^-    - \hat k_x^-   \omega   }{ \omega^2 -f^2  1_x^+ 1_y^-  1_x^- 1_y^+} 
+ ~~,~~
+ \hat  v_l =  \frac{    if 1_x^+ 1_y^- \hat k_x^-      -  \hat k_y^- \omega   }{\omega^2 -  f^2  1_x^- 1_y^+ 1_x^+ 1_y^- } 
+  ~~,~~
+ \hat w_l =     -\frac{ \hat k_z^-  \omega  \delta^2 }{  \delta^2 \omega^2   -N^2 1_z^-  1_z^+ }  
+ \\
+ \hat b_l =  \frac{ i   \hat 1_z^+ \hat k_z^-  }{ \delta^2  \omega^2   -N^2 1_z^-  1_z^+ } 
+\eeq
+
+\fi
+\beq
+ \v p = p_s \lk 
+ \frac{  if  1_x^- 1_y^+ \hat k_y^-    + \hat k_x^-   \omega   }{f^2  1_x^+ 1_y^-  1_x^- 1_y^+ -  \omega^2 }  ~,~
+  \frac{ -   if 1_x^+ 1_y^- \hat k_x^-      +  \hat k_y^- \omega   }{ f^2  1_x^- 1_y^+ 1_x^+ 1_y^-  -\omega^2   } ~,~
+    \frac{ \hat k_z^-  \omega  \delta^2 }{ N^2 1_z^-  1_z^+ -  \delta^2 \omega^2    }  ~,~
+     \frac{- i   \hat 1_z^+ \hat k_z^-  }{N^2 1_z^-  1_z^+-  \delta^2  \omega^2    } 
+     \rk
+\eeq
+Orthonormalisation with
+\ifdetail
+\beq
+   \v q \cdot \v p =   p_0 \lk    \frac{        \hat k_y^+    \hat k_y^-   +    \hat k_x^+     \hat k_x^-     }{  f^2    1_x^- 1_y^+1_x^+ 1_y^-    } 
+   +    \frac{   \hat k_z^+  \hat k_z^-    }{  N^2 1_z^+ 1_z^-    } 
+   \rk 
+   = p_0 \frac{ (    \hat k_y^+    \hat k_y^-   +    \hat k_x^+     \hat k_x^- )  N^2 1_z^+ 1_z^-   +  \hat k_z^+  \hat k_z^-     f^2    1_x^- 1_y^+1_x^+ 1_y^- }
+   { f^2    1_x^- 1_y^+1_x^+ 1_y^-   N^2 1_z^+ 1_z^-     }
+   \\
+   p_0 = \frac { f^2    1_x^- 1_y^+1_x^+ 1_y^-   N^2 1_z^+ 1_z^-     }
+   { (    \hat k_y^+    \hat k_y^-   +    \hat k_x^+     \hat k_x^- )  N^2 1_z^+ 1_z^-   +  \hat k_z^+  \hat k_z^-     f^2    1_x^- 1_y^+1_x^+ 1_y^- }
+  %
+\eeq
+
+
+\beq
+ \v q \cdot \v p = p_s \lk 
+  \frac{   ( f^2 1_x^+  1_y^-    1_y^+    1_x^- + \omega^2  )    (   k_y^+   k_y^-    +      k^+_x       k_x^-       )     
+    }{(1_y^+   1_x^-    1_x^+    1_y^-  f^2 -  \omega^2   )^2 }
++
+         \frac{    \hat k_z^+   \hat k_z^-    \omega^2    \delta^2  +  N^2 \hat 1_z^-     \hat 1_z^+ \hat k_z^- 
+         \hat k_z^+    }{(N^2 1_z^-  1_z^+ -  \delta^2  \omega^2)^2  }  
+  \rk
+\eeq
+and thus using the same operations as above
+\beq
+ p_\pm =  \frac{(N^2 1_z^+ 1_z^-    -  \delta^2 \omega^2) ( \omega^2 - f^2 1_x^+  1_y^-    1_y^+    1_x^-)} 
+ { 2(   \hat k_z^+   \hat k_z^-    f^2  1_x^+  1_y^-    1_y^+    1_x^- +  (   k_y^+   k_y^-    +      k^+_x       k_x^-       )  1_z^+ 1_z^-     N^2 )  }
+%
+\eeq
+
+\fi
+\beq
+ p_0 &=& \frac { f^2    1_x^- 1_y^+1_x^+ 1_y^-   N^2 1_z^+ 1_z^-     }
+   {   \hat k_z^+  \hat k_z^-     f^2    1_x^- 1_y^+1_x^+ 1_y^-   + (    \hat k_y^+    \hat k_y^-   +    \hat k_x^+     \hat k_x^- )  N^2 1_z^+ 1_z^-  }
+   \\
+    p_\pm &=&  \frac{1}{2} \frac{(N^2 1_z^+ 1_z^-    -  \delta^2 \omega^2) ( \omega^2 - f^2 1_x^+  1_y^-    1_y^+    1_x^-)} 
+ {    \hat k_z^+   \hat k_z^-    f^2  1_x^+  1_y^-    1_y^+    1_x^- +  (   k_y^+   k_y^-    +      k^+_x       k_x^-       )  1_z^+ 1_z^-     N^2   }
+   \eeq
+
+\subsection*{Balancing}
+
+The system is given by
+\beq
+ \pt{} \hat \v z  -  i  \v A \cdot \hat \v z  =  Ro \,\hat \v n 
+ \eeq
+ with  the state vector $\hat \v z=(\hat \v u,\hat w, \hat b)^T$, the
+  vector of the non-linearities $\v n = ({\v n}_u ,  n_p )^T$, and its Fourier transform 
+ $\hat \v n = (2 \pi)^{-2}  \int d{\v x}  \,  \v n e^{- i \v k \cdot \v x} $.  
+  The  matrix $\v A$  has eigenvalues $\omega^s$ and right and left
+eigenvectors $\v q^s$  and $\v p^s$, respectively.
+
+It is useful to project \ on the fast or slow modes using the eigenvectors of $\v A$.
+The  fast or slow mode amplitude  $g^s = \v p^s \cdot \hat \v z$ is then governed by 
+ \beq 
+ \pt{}    g^{s} -  i \omega^{s} g^{s}  = Ro \, \v p^s \cdot \hat \v n   =  - i Ro \, I^{s} (g^0,g^\pm)   ~~,~~s=0,\pm
+ \eeq
+ where the case $s=0$ corresponds to the slow geostrophic mode with amplitude $g^0$, and $s=\pm$ to the (two) fast gravity wave mode
+ with $g^+$ and $g^-$. $I^s$ is the interaction integral with
+  \beq 
+  I^s(g^0,g^\pm) =  i\v p^s \cdot   \hat \v n
+  \eeq
+  and accounts for the quadratic non-linearities, 
+which  can  also be written
+ as 
+ \beq  I^s(g^0,g^\pm)  &=&  I^s(g^0,0) +  I^s(0,g^\pm)+ K^{s}(g^0,g^\pm) 
+ \eeq
+ 
+% Now set $g^s(t,\v k)  =a^s(t,\v k)  \exp{i \omega^s(\v k) t}$.
+%  \beq 
+%  \p_t a^s  =  - i Ro \, I^{s} (g^0,g^\pm)   \exp{-i \omega^s(\v k) t}  ~~,~~s=0,\pm
+% \eeq
+
+ 
+ 
+Expand the  gravity wave amplitudes  as 
+\beq
+g^\pm = Ro f_1^\pm + Ro^2 f_2^\pm  + Ro^3 f_3^\pm + ...
+\eeq
+and introduce a fast and slow time scale 
+with $T=Ro \, t^*$ and $\p_t = Ro \, \p_T + \p_{t^*}$ and 
+$g^0 = g^0(T)$ and $g^\pm = g^\pm(T,t^*)$.  For $s=0$ the governing equation becomes
+\beq
+ Ro \, \p_T g^{0}  =  - i Ro  I^0(g^0,g^\pm) = - i Ro  \lk  I^s(g^0,0) +  I^s(0, \sum Ro^n f_n^\pm )+ K^{s}(g^0, \sum Ro^n f_n^\pm)  \rk
+ \eeq
+ The first  order 
+ \beq
+  \p_T g^{0}  =  - i I^0(g^0,0)   
+  \eeq
+  and the second order
+  \beq
+  0 = K^{0}(g^0,  f_1^\pm)  =  I^0(g^0,f_1^\pm)  -  I^0(g^0,0) +  I^s(0,f_1^\pm)
+  \\
+  \p_T g^{0}     = - i    I^0(g^0,f_1^\pm)    + i  I^0(0,f_1^\pm)  
+\eeq
+$f_1^\pm$ is the first order slaved mode.
+For $s= \pm$ the governing equation becomes
+\beq 
+ Ro \p_T    \sum Ro^n f_n^{\pm} + \p_{t^*}    \sum Ro^n f_n^{\pm}  -  i \omega^{\pm}  \sum Ro^n f_n^{\pm}     =  - i Ro \, I^{\pm} (g^0, \sum Ro^n f_n^{\pm}   ) 
+ \\ =  - i Ro  \lk  I^\pm (g^0,0) +  I^\pm( 0, \sum Ro^n f_n^\pm )+ K^{\pm}(g^0, \sum Ro^n f_n^\pm)  \rk
+ \eeq
+ First order
+ \beq 
+ \p_{t^*}    f_1^{\pm} -  i \omega^{\pm}   f_1^{\pm}     =  - i \, I^{\pm} (g^0, 0 )  
+  \eeq
+Eliminate $ \p_{t^*}    f_1^{\pm} $ such that the slaved mode becomes
+\beq 
+  f_1^\pm   =   I^{\pm} (g^0,0) /  \omega^{\pm}
+ \eeq
+
+
+ 
+ \subsection*{Periodic forcing}
+
+  Consider a periodic wavemaker in the equations
+   \beq
+ \p_t   u  -f v  +\p_x  p  &=&    -Ro  \, \lk \v u \cdot \vn u  + w \p_z  u \rk  + \cos(\omega_f t ) f(\v x)  \\
+  \p_t  v  + f u +\p_y p  &=&    -Ro  \, \lk \v u \cdot \vn v  + w \p_z v \rk   \\
+  \p_t w   + (\p_z p  -   b) /\delta^2  &=& -  Ro \,  \lk  \v u \cdot \vn w  + w \p_z w \rk 
+\\
+\p_t b + N^2 w &=&  - Ro \,  \lk \v u \cdot \vn b   + w \p_z b \rk 
+ \eeq
+   Assuming again a triple-periodic domain and applying the Fourier ansatz
+  \beq
+ \v u (\v x, t)  = \int_{-\infty}^\infty d{\v K} \, \hat \v u(\v K, t)   e^{ i \v K \cdot \v x  }
+ \eeq
+ and similar for $w$ and $b$  with wavenumber vector $\v K = (k_x ,k_y,k_z)$, 
+yields
+after multiplication with $  e^{- i \v K \cdot \v x} $ and integration over $\v x$
+\beq
+ \pt{} \v z =  i  \v A \cdot \v z  + Ro \, \hat{\v n}  + \cos(\omega_f t) \v{ \hat f} ~,~ \v{ \hat f} =   (\hat f, 0,...)^T  
+ \eeq
+ with $f(\v x) =    \int d{\v K}  \hat f(\v K)    e^{ i \v K \cdot \v x  }$ and 
+with the linear same system matrix $\v A(\v K)$,  state vector $\v z(\v K,t)$, and vector function $\v N$.
+\ifdetail
+Matrix is given by
+ \beq
+\v A = \left(\begin{array}{ccccc}  
+0 & -i f & 0 & 0 & - k_x \\  
+i f & 0 & 0 & 0 &  - k_y  \\   
+0  & 0 & 0 & -i /\delta^2 &  - m /\delta^2  \\
+0  & 0 &  i N^2  &0 &  0    \\
+- c_s^2 k_x &   -  c_s^2  k_y & - c_s^2 m & 0 & 0  \end{array}\right)  
+~~,~~\v z = \Vec{ \hat u \\ \hat v \\   \hat w \\ \hat b \\ \hat  p}
+ \eeq
+since with $f(\v x) =    \int d{\v K}  \hat f(\v K)    e^{ i \v K \cdot \v x  }$ 
+\beq
+  \int   d{\v K}  \p_t   \hat u    \int d \v x  e^{ i (\v K- \v K') \cdot \v x  }   
+  -f    \int d{\v K}   \hat v  \int d \v x     e^{ i (\v K- \v K') \cdot \v x  }   
+   + \int  d{\v K}  \hat p i k_x  \int d \v x     e^{ i (\v K- \v K') \cdot \v x  }   =
+   \\  
+     -Ro (..)   + \cos(\omega_f t )   \int d{\v K}  \hat f(\v K)   \int d{\v x}   e^{ i (\v K- \v K') \cdot \v x  }
+     \\
+       \p_t   \hat u   + i  (i f )    \hat v   + \hat p i k_x  =  -Ro (..)   + \cos(\omega_f t )  \hat f 
+\eeq
+\fi
+
+
+Expanding $\v z =\sum_s  g^s(t) \v q^s$ and $\v{ \hat f} = \sum_s f^s \v q^s$ and 
+projecting on the  left eigenvectors $\omega^s \v p^s = \v p^s \cdot \v A $ yields
+\beq
+%\v p^n  \cdot \pt{}  g^s \v q^s  =  i \v p^n  \cdot  ( \v A \cdot (g^s \v q^s) )   + Ro \,\v p^n  \cdot   \hat{\v n}  
+%+ \cos(\omega_f t)\v p^n  \cdot   (f^s \v q^s ) \\
+ \pt{}  g^n   =  i g^n \omega^n    +Ro \,\v p^n  \cdot   \hat{\v n}  
++ \cos(\omega_f t) f^n
+ \eeq
+ Now set $g^n = e^{i \omega^n t} a(t)$
+ \beq
+   \pt{}  a^n   =e^{-i \omega^n t}  Ro \,\v p^n  \cdot   \hat{\v n}  
++e^{-i \omega^n t}  \cos(\omega_f t) f^n
+ \eeq
+ For $\omega^n = \omega_f$
+ \beq
+   \pt{}  a^n   =e^{-i \omega^n t}  Ro \,\v p^n  \cdot   \hat{\v n}  
++\lk \cos^2( \omega^n t)   - i \sin( \omega^n t)  \cos(\omega^n t) \rk f^n
+ \eeq
+First part of the bracket is always positive, second part is oscillatory.
+
+
+
+\subsection*{Discrete frequency with Doppler shift}
+
+  The scaled Boussinesq equations are
+\beq
+ \p_t  \v u  + f \rvec{ \v u} +\vn  p  &=&    -Ro  \, \lk \v u \cdot \vn \v u  + w \p_z \v u \rk   \\
+  \p_t w   + (\p_z p  -   b) /\delta^2  &=& -  Ro \,  \lk  \v u \cdot \vn w  + w \p_z w \rk 
+\\
+\p_t b + N^2 w &=&  - Ro \,  \lk \v u \cdot \vn b   + w \p_z b \rk 
+ \eeq
+A basic state $\v U=(U=const,0,0)$ and $B=const$ and $P(y,z) =f U  y  + Bz $ is balanced if 
+\beq
+  f U  = - \p_y   P    ~,~
+    \p_z P  =   B
+ \eeq
+Then with $\v u = \v u' + U$, ... and dropping all primes
+\beq
+\lk  \p_t   +  Ro  \,   U   \p_x  \rk \v u   + f \rvec{ \v u} +\vn  p  &=&    -Ro  \, \lk \v u \cdot \vn \v u  + w \p_z \v u \rk      \\
+  \lk  \p_t   +  Ro  \,   U  \p_x \rk w  + (\p_z p  -   b) /\delta^2  &=& -  Ro \,  \lk  \v u  \cdot \vn w  + w  \p_z w \rk 
+\\
+ \lk  \p_t   +  Ro  \,  U  \p_x  \rk  b + N^2 w &=&  - Ro \,  \lk \v u  \cdot \vn b   + w \p_z b \rk 
+ \eeq
+ Fourier transform yields
+ \beq
+\lk  \p_t   +  Ro  \,   U i   k_x   \rk \hat {\v u}     &=&  i \lk  i f \rvec{ \hat{ \v u} } -   \v k  \hat  p \rk      -   Ro  \,  \hat F\lk \v u \cdot \vn \v u  + w \p_z \v u \rk       \\
+  \lk  \p_t   +  Ro  \,  U  i k_x   \rk \hat w   &=&   i  \lk  -   k_z \hat  p /\delta^2    - i  \hat  b  /\delta^2   \rk  -   Ro \,    \hat F\lk  \v u  \cdot \vn w  + w  \p_z w \rk 
+\\
+ \lk  \p_t   +  Ro  \,  U i k_x   \rk \hat  b &=&   i  \lk i  N^2 \hat w  \rk -  Ro \, \hat F   \lk \v u  \cdot \vn b   + w \p_z b \rk 
+ \eeq
+ With the pressure equation this can be written as
+ \beq
+ ( \pt{}   + Ro i U k_x ) \v  z =  i  \v A \cdot \v z  - Ro \, \hat{\v n} 
+ \eeq
+with the linear system matrix $\v A(\v K)$,  the state vector $\v z(\v K,t)$, and the vector function $\v N$ given by
+ \beq
+\v A = \left(\begin{array}{ccccc}  
+0 & -i f & 0 & 0 & - k_x \\  
+i f & 0 & 0 & 0 &  - k_y  \\   
+0  & 0 & 0 & -i /\delta^2 &  - m /\delta^2  \\
+0  & 0 &  i N^2  &0 &  0    \\
+- c_s^2 k_x &   -  c_s^2  k_y & - c_s^2 m & 0 & 0  \end{array}\right)  
+~~,~~\v z = \Vec{ \hat u \\ \hat v \\   \hat w \\ \hat b \\ \hat  p}
+ \eeq
+With ansatz $\v z = \v z_0  \exp{- \omega t} $ 
+ \beq
+ ( \omega   - Ro  U k_x ) \v  z_0  =    -\v A \cdot \v z_0   = - \omega_A \v z_0 ~,~\omega_A  = - \omega   + Ro  U k_x
+ \eeq
+with the eigenvalues $\omega_A$ of the system matrix $\v A$ 
+\beq
+\omega_A^2 = 0 ~,~
+0 =   \omega_A^2 K^2     -  k^2 N^2           -   f^2 m^2
+\eeq
+ with $K^2 = \delta^2 k^2 + m^2$. 
+ The intrinsic frequency is $\omega_A$ and the one which figures in the eigenvector
+ definitions. $\omega$ is the frequency of encounter and vanishes for the lee waves.
+ Any state $\v z$ can be decomposed with the left and right eigenvectors of $\v A$
+ \beq
+  \v z = \sum g^s \v q^s ~,~  \v p^s \cdot  \v z  = \sum g^t  \v p^s \cdot  \v q^t  = g^s
+  \\
+   ( \omega   - Ro  U k_x ) \sum g^s \v q^s    =    -\v A \cdot \sum g^s \v q^s    = - \sum g^s \omega_A^s \v q^s 
+   \\
+    ( \omega   - Ro  U k_x ) g^s      = - g^s \omega_A^s 
+ \eeq
+ 
+ 
+Discrete linear system  is
+\beq
+\p_t  b_{ijk} + N^2  1^-_z  (w_{ijk} )  &=&  %- Ro \, U  (   1^+_x ( b_{ijk} )    -   1^-_x( b_{ijk}) )  /\Delta_x
+%= - Ro \, U  (b_{i+1} - b_{i} + b_{i}   - b_{i-1}     )/2  \Delta_x
+%=
+ - Ro \, U \Bar{  \delta^+_x( b_{ijk} )  }^{x-}   
+\eeq
+and so on, such that Fourier transform becomes
+\beq
+ - i \omega    \hat { u}   - f \rvec{ \hat { v} } + i \hat{ k}^+_x   \hat  p  &=&    -iRo  \, U     \hat 1^-_x   \hat k^+_x    \hat { u}    \\
+   - i \omega   \hat {v}   + f \rvec{ \hat  u } + i \hat{ k}^+_y   \hat  p  &=&    -iRo  \, U     \hat 1^-_x   \hat k^+_x   \hat {v}    \\
+   - i \omega  \hat w   + (i \hat k^+_z  p  -   \hat 1_z^+ b) /\delta^2  &=& -  iRo \,  U    \hat 1^-_x   \hat k^+_x  \hat w  
+\\
+ - i \omega   \hat b + N^2 \hat 1^-_z  \hat w &=&  -  i Ro \, U    \hat 1^-_x   \hat k^+_x  \hat b  
+ \eeq
+ and so Doppler shift is $\omega$ $\to$  $ \omega - Ro \, U    \hat 1^-_x   \hat k^+_x$ 
+ \beq
+  (\omega - Ro \, U    \hat 1^-_x   \hat k^+_x  )  \hat b  &=& - i N^2 \hat 1^-_z  \hat w
+ \eeq
+with  $ \hat k^+_x  =-i  ( e^{ik_x  \Delta_x   }  - 1  ) /\Delta_x$ and $\hat 1_x^- =      \lk 1+ e^{-ik_x  \Delta x  }  \rk /2$ 
+\beq
+ 2  \Delta_x \hat 1^-_x   \hat k^+_x &=& -i  ( 1+ e^{-ik_x  \Delta x  }  )  ( e^{ik_x  \Delta_x   }  - 1  ) 
+ =  -i \lk e^{ik_x  \Delta_x   } + e^{-ik_x  \Delta x  }   e^{ik_x  \Delta_x   } - 1- e^{-ik_x  \Delta x  } \rk 
+ \\ &=& -i\lk  e^{ik_x  \Delta_x   }  - e^{-ik_x  \Delta x  } \rk 
+ =   2  \sin k_x  \Delta x     
+ ~,~
+  \hat 1^-_x   \hat k^+_x  =   \sin (k_x  \Delta x ) /      \Delta_x 
+\eeq
+
+
+\section*{The scaled GM spectrum}
+
+We want to have the scaled GM spectrum.
+\beq
+ E(k,\omega,\phi,\v x) &=& \frac{ E_0(\v x) }{4\pi}  \frac{\tl A(k/k_\star)}{  k_\star}  B(\omega)
+ \\
+ E(k_1,k_2,m) &=&  \frac{E_0(\v x)}{4 \pi}     \frac{ \tl A(m/m_\star) }{m_\star}   B(\omega)   
+ \frac{  ( N^2 - \delta^2 \omega^2)^{2} }  { m^2 \omega  (N^2- \delta^2 f^2)}
+\eeq
+where $\tl A$ and $B$ are dimensionless functions given by
+\beq
+ \tl A(\lambda) = \frac{n_a}{ (1+\lambda^2)^t  }~,~B(\omega) = \frac{n_b |f|}{ \omega \sqrt{\omega^2-f^2 }}  
+\eeq
+with the parameter $c_\star = 1/(j_\star \pi) \int N dz$, the modal bandwidth $j_\star=3,..15$,
+ the exponent $t=1$, and the normalisations $n_a=n_b=2/\pi$, and
+\beq
+ k_\star =\frac{\sqrt{\omega^2-f^2} }{c_\star}~,~m_\star = \frac{\sqrt{N^2 - \delta^2 \omega^2} }{c_\star} 
+ \eeq
+\ifdetail
+
+with the transformation
+ \beq
+ \omega^2 = \frac{N^2 k^2 + f^2 m^2}{ \delta^2 k^2 + m^2} ~~\to~~
+ m^2(   \omega^2   - f^2 ) = k^2 ( N^2 - \omega^2\delta^2 ) 
+ \\
+    m^2 = k^2  \frac{ N^2 - \delta^2 \omega^2}{\omega^2-f^2}
+     ~\to~m_\star^2 =  \frac{ N^2 - \delta^2 \omega^2}{c_\star^2 }
+    ~\to~\frac{m_\star^2}{k_\star^2} = \frac{m^2}{k^2} 
+    \eeq
+\beq
+  k_1 &=&  k \cos \phi = m \sqrt{ \frac{\omega^2-f^2}{ N^2 - \delta^2 \omega^2} }  \cos \phi  
+  \\ k_2 &=& k \sin \phi = m \sqrt{ \frac{\omega^2-f^2}{ N^2 - \delta^2 \omega^2} }  \sin \phi  
+   \\ m&=& m
+\eeq
+and  the Jacobi determinante
+\beq
+  J = \left| \begin{array}{ccc} 
+   \p k_1 / \p m & \p k_1 /\p \omega & \p k_1/\p \phi 
+  \\
+     \p k_2 / \p m & \p k_2 /\p \omega & \p k_2/\p \phi 
+     \\
+        \p m / \p m & \p m /\p \omega & \p m/\p \phi 
+    \end{array}    \right|  
+    = \left| \begin{array}{ccc} 
+  \sqrt{ \frac{\omega^2-f^2}{ N^2 -\delta^2  \omega^2} }  \cos \phi    & \p k_1 /\p \omega & -m \sqrt{ \frac{\omega^2-f^2}{ N^2 - \delta^2\omega^2} }  \sin \phi  
+  \\
+    \sqrt{ \frac{\omega^2-f^2}{ N^2 - \delta^2\omega^2} }  \sin \phi   & \p k_2 /\p \omega & m \sqrt{ \frac{\omega^2-f^2}{ N^2 - \delta^2\omega^2} }  \cos\phi  
+     \\
+       1 & 0  & 0
+    \end{array}    \right|  
+    \\
+    = m  \sqrt{ \frac{\omega^2-f^2}{ N^2 - \delta^2 \omega^2} }   \lk  \p k_1 /\p \omega   \cos\phi   
+     +   \p k_2 /\p \omega   \sin \phi  \rk
+     = m^2   \sqrt{ \frac{\omega^2-f^2}{ N^2 - \delta^2 \omega^2} }   
+     \frac{\p}{\p \omega } \sqrt{ \frac{\omega^2-f^2}{ N^2 -\delta^2 \omega^2} }
+   \\  =m^2  \omega  \frac{  (N^2-  \delta^2 f^2)}{  ( N^2 - \delta^2 \omega^2)^{2} }  
+\eeq
+with
+\beq
+\frac{\p}{\p \omega } \sqrt{ \frac{\omega^2-f^2}{ N^2 -\delta^2 \omega^2} }  = \frac{1}{2}  \sqrt{ \frac{ N^2 - \delta^2\omega^2}{\omega^2-f^2} }  
+\frac{\p}{\p \omega }  \frac{\omega^2-f^2}{ N^2 - \delta^2\omega^2} 
+\\
+= \frac{1}{2}  \sqrt{ \frac{ N^2 -\delta^2 \omega^2}{\omega^2-f^2} }  \lk 
+\frac{2  \omega}{ N^2 - \delta^2\omega^2}  - (\omega^2-f^2) ( N^2 -\delta^2 \omega^2)^{-2} ( -2 \delta^2 \omega)  \rk
+\\ =  \frac{1}{2}  \sqrt{ \frac{ N^2 -\delta^2 \omega^2}{\omega^2-f^2} }  \lk 
+\frac{2  \omega(N^2 - \delta^2\omega^2) }{ (N^2 - \delta^2\omega^2)^2 }  + \frac{2 \delta^2 \omega  (\omega^2-f^2)}{  ( N^2 -\delta^2 \omega^2)^{2} }    \rk
+\\= 
+\sqrt{ \frac{ N^2 -\delta^2 \omega^2}{\omega^2-f^2} }  \lk 
+\frac{ \omega N^2  -  \delta^2 \omega  f^2}{  ( N^2 -\delta^2 \omega^2)^{2} }    \rk
+ = 
+\omega  \sqrt{ \frac{ N^2 - \delta^2 \omega^2}{\omega^2-f^2} }   \frac{  (N^2-  \delta^2 f^2)}{  ( N^2 - \delta^2 \omega^2)^{2} }    
+\eeq
+\fi
+
+ \end{document}
+ 
+ 
+ 
+ 
+ 
+ 
