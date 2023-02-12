@@ -147,7 +147,11 @@ program main
   call flush(6)
 
   if (enable_diag_snap) call init_snap_cdf
- 
+  !if (enable_diag_spec) call init_diag_spec()
+  !if (enable_diag_snap_chunks) call init_snap_cdf_chunks
+  if (enable_diag_balance.or.enable_diag_balance_chunks) call init_diag_balance
+  !if (enable_diag_opt_balance) call init_diag_opt_balance
+   
   if (my_pe==0) then
      print*,' '
      print'(a,i4,a,i4,a,i4)',' nx x ny x nz = ',nx,' x ',ny,' x ',nz

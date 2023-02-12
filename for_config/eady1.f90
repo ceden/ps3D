@@ -20,6 +20,8 @@ subroutine set_parameter
  enable_vertical_boundaries = .true.
  enable_diag_snap = .true.
  enable_AB_3_order = .true.
+ 
+ enable_diag_balance        = .true.
 
 end subroutine set_parameter 
 
@@ -28,7 +30,7 @@ end subroutine set_parameter
 
 subroutine set_initial_conditions
  use main_module  
-
+ use module_diag_balance
  implicit none
  integer :: i,j,k
  real*8 :: x(nx),y(ny),z(nz)
@@ -62,6 +64,33 @@ subroutine set_initial_conditions
  
  call cumsum_in_y(b)
  call border_exchg_3D(b)
+ 
+ if (enable_diag_balance ) then
+  call diag_balance_zero_order
+  call diag_balance_first_order
+  call diag_balance_second_order
+ 
+  u(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) = u0(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) + & 
+                                           u1(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) + &
+                                           u2(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+  v(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) = v0(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) + & 
+                                           v1(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) + & 
+                                           v2(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+  w(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) = w0(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) + & 
+                                           w1(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) + & 
+                                           w2(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+  b(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) = b0(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) + & 
+                                           b1(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) + &
+                                           b2(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+ endif
+ 
+ call border_exchg_3D(u)
+ call border_exchg_3D(v)
+ call border_exchg_3D(w)
+ call border_exchg_3D(b) 
+ 
+ 
+ 
 end subroutine set_initial_conditions
 
 

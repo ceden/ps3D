@@ -43,6 +43,6 @@ diag_balance_io.o: diag_balance_io.f90 main_module.o
 eigenvectors.o: eigenvectors.f90 
 		$(F90) $(F90FLAGS)  $(MPIFLAGS) -c eigenvectors.f90 
         
-config.o: config.f90 main_module.o 
+config.o: config.f90 main_module.o diag_balance.o
 		$(F90) $(F90FLAGS) $(MPIFLAGS) $(P3DFFT_FLAGS)  $(CDFFLAGS) -c config.f90
 
