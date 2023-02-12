@@ -89,16 +89,21 @@ end subroutine allocate_module_diag_balance
 
 subroutine diag_balance
  use main_module
+ 
+ if (my_pe==0) print*,'entering balancing after Warn et al '
  call diag_balance_zero_order
  call diag_balance_first_order
  call diag_balance_second_order
  call diag_balance_third_order
+ 
  
  if (enable_diag_balance_chunks) then
    call write_diag_balance_chunks
  else
    call write_diag_balance
  endif 
+ 
+ if (my_pe==0) print*,'done balancing after Warn et al '
 end subroutine diag_balance
 
 
@@ -468,8 +473,8 @@ subroutine model_run(u_in,v_in,w_in,b_in,u_out,v_out,w_out,b_out,max_steps)
  integer :: n,max_steps,tau_loc,taum1_loc,taum2_loc,itt_loc
  real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_loc,v_loc
  real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: w_loc,b_loc,p_loc
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx,2):: du_loc,dv_loc
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx,2):: dw_loc,db_loc
+ real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx,3):: du_loc,dv_loc
+ real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx,3):: dw_loc,db_loc
  
  ! save model state
  u_loc = u; v_loc = v ; w_loc = w; b_loc = b; p_loc = p
