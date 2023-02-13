@@ -150,7 +150,7 @@ program main
   !if (enable_diag_spec) call init_diag_spec()
   !if (enable_diag_snap_chunks) call init_snap_cdf_chunks
   if (enable_diag_balance.or.enable_diag_balance_chunks) call init_diag_balance
-  !if (enable_diag_opt_balance) call init_diag_opt_balance
+  if (enable_diag_opt_balance) call init_diag_opt_balance
    
   if (my_pe==0) then
      print*,' '
@@ -219,10 +219,10 @@ program main
       !if (enable_diag_spec)     call diag_spec()
       if (enable_diag_balance.or.enable_diag_balance_chunks)  call diag_balance()
       !if (enable_diag_snap_chunks) call diag_snap_chunks()
-      !if (enable_diag_opt_balance) then
-      !   call diag_opt_balance()       
-      !   call write_diag_opt_balance()
-      !endif 
+      if (enable_diag_opt_balance) then
+         call diag_opt_balance()       
+         call write_diag_opt_balance()
+      endif 
       
    endif   
    call toc('diagnostics')

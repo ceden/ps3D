@@ -3,7 +3,8 @@ include ../make.inc
 
 all_files = config.o main_module.o timing_module.o advection.o restart.o diagnose.o\
             integrate.o mixing.o my_fft.o parallel_mpi.o pressure_solver.o  \
-            diag_balance.o diag_balance_io.o eigenvectors.o
+            diag_balance.o diag_balance_io.o eigenvectors.o \
+            diag_opt_balance.o diag_opt_balance_io.o
 
 
 all: main.o  $(all_files)
@@ -42,7 +43,12 @@ diag_balance_io.o: diag_balance_io.f90 main_module.o
 		$(F90) $(F90FLAGS) $(CDFFLAGS) $(MPIFLAGS) -c diag_balance_io.f90 
 eigenvectors.o: eigenvectors.f90 
 		$(F90) $(F90FLAGS)  $(MPIFLAGS) -c eigenvectors.f90 
-        
-config.o: config.f90 main_module.o diag_balance.o
+diag_opt_balance.o: diag_opt_balance.f90 main_module.o
+		$(F90) $(F90FLAGS)  $(MPIFLAGS) -c diag_opt_balance.f90 
+diag_opt_balance_io.o: diag_opt_balance_io.f90 main_module.o
+		$(F90) $(F90FLAGS) $(CDFFLAGS) $(MPIFLAGS) -c diag_opt_balance_io.f90 
+
+
+config.o: config.f90 main_module.o diag_balance.o diag_opt_balance.o
 		$(F90) $(F90FLAGS) $(MPIFLAGS) $(P3DFFT_FLAGS)  $(CDFFLAGS) -c config.f90
 
