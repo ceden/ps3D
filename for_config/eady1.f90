@@ -1,4 +1,8 @@
 
+
+
+
+
 subroutine set_parameter
  use main_module   
  implicit none
@@ -59,8 +63,8 @@ subroutine set_initial_conditions
  do k=ks_pe,ke_pe
    b(:,:,k) = -dy*(u(:,:,k+1)-u(:,:,k-1))/(2*dz)*f0
  enddo
- if (my_blk_k==1) b(:,:,1) = 0.
- if (my_blk_k==n_pes_k) b(:,:,nz) = 0.
+ if (my_blk_k==1) b(:,:,1) = b(:,:,2) 
+ if (my_blk_k==n_pes_k) b(:,:,nz) = (:,:,nz-1)
  
  call cumsum_in_y(b)
  call border_exchg_3D(b)
