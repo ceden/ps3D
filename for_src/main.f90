@@ -214,7 +214,16 @@ program main
    call tic('diagnostics')     
    if ( mod(itt,max(1,int(tsmonint/dt)))  == 0 .or. itt == 0)  call diagnose  
    if ( mod(itt,max(1,int( snapint/dt)))  == 0 .or. itt == 0)  then      
-      if (enable_diag_snap)     call diag_snap()
+      if (enable_diag_snap)     call diag_snap()      
+      !if (enable_diag_snap_par) call diag_snap_par()
+      !if (enable_diag_spec)     call diag_spec()
+      if (enable_diag_balance.or.enable_diag_balance_chunks)  call diag_balance()
+      !if (enable_diag_snap_chunks) call diag_snap_chunks()
+      !if (enable_diag_opt_balance) then
+      !   call diag_opt_balance()       
+      !   call write_diag_opt_balance()
+      !endif 
+      
    endif   
    call toc('diagnostics')
         
