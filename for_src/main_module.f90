@@ -21,8 +21,11 @@ module main_module
   logical :: enable_diag_balance_filter = .false.
   integer :: diag_balance_filter_width  = 3 
   logical :: enable_diag_opt_balance    = .false.
+  logical :: enable_diag_opt_time_ave   = .false.
   real*8  :: opt_balance_period         = 1.
+  real*8  :: opt_balance_average        = 1.
   integer :: opt_balance_max_Itts       = 100
+  integer :: opt_balance_average_times  = 1
   real*8  :: opt_balance_tol            = 1d-9
  
 !---------------------------------------------------------------------------------

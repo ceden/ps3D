@@ -54,6 +54,22 @@ subroutine init_diag_opt_balance
     iret = nf_put_att_text(ncid,id,'long_name',len_trim('buoyancy'),'buoyancy')
     iret = nf_put_att_text(ncid,id,'unit',len_trim('m/s^2'),'m/s^2')
 
+    id  = ncvdef (ncid,'u_base',NF_DOUBLE,4,(/xdim, ydim,zdim,Timedim/),iret)
+    iret = nf_put_att_text(ncid,id,'long_name',len_trim('velocity'),'velocity')
+    iret = nf_put_att_text(ncid,id,'unit',len_trim('m/s'),'m/s')
+
+    id  = ncvdef (ncid,'v_base',NF_DOUBLE,4,(/xdim, ydim,zdim,Timedim/),iret)
+    iret = nf_put_att_text(ncid,id,'long_name',len_trim('velocity'),'velocity')
+    iret = nf_put_att_text(ncid,id,'unit',len_trim('m/s'),'m/s')
+
+    id  = ncvdef (ncid,'w_base',NF_DOUBLE,4,(/xdim, ydim,zdim,Timedim/),iret)
+    iret = nf_put_att_text(ncid,id,'long_name',len_trim('velocity'),'velocity')
+    iret = nf_put_att_text(ncid,id,'unit',len_trim('m/s'),'m/s')
+
+    id  = ncvdef (ncid,'b_base',NF_DOUBLE,4,(/xdim, ydim,zdim,Timedim/),iret)
+    iret = nf_put_att_text(ncid,id,'long_name',len_trim('buoyancy'),'buoyancy')
+    iret = nf_put_att_text(ncid,id,'unit',len_trim('m/s^2'),'m/s^2')
+
     iret= nf_enddef(ncid)
 
     do i=1,nx
@@ -121,6 +137,24 @@ subroutine write_diag_opt_balance
                              (/isize(1),isize(2),isize(3),1/),&
                              b_bal(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe))
 
+    iret=nf_inq_varid(ncid,'u_base',id)
+    iret= nf_put_vara_double(ncid,id,(/istart(1),istart(2),istart(3),ilen/), &
+                             (/isize(1),isize(2),isize(3),1/),&
+                             u_base(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe))
+    iret=nf_inq_varid(ncid,'v_base',id)
+    iret= nf_put_vara_double(ncid,id,(/istart(1),istart(2),istart(3),ilen/), &
+                             (/isize(1),isize(2),isize(3),1/),&
+                             v_base(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe))
+    iret=nf_inq_varid(ncid,'w_base',id)
+    iret= nf_put_vara_double(ncid,id,(/istart(1),istart(2),istart(3),ilen/), &
+                             (/isize(1),isize(2),isize(3),1/),&
+                             w_base(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe))
+    iret=nf_inq_varid(ncid,'b_base',id)
+    iret= nf_put_vara_double(ncid,id,(/istart(1),istart(2),istart(3),ilen/), &
+                             (/isize(1),isize(2),isize(3),1/),&
+                             b_base(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe))
+
+
   end if
 
   do n=1,n_pes-1
@@ -138,6 +172,16 @@ subroutine write_diag_opt_balance
                       ,isize(1)*isize(2)*isize(3),mpi_real8,0,tag,mpi_comm_world,iret)
          call mpi_send(b_bal(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) &
                       ,isize(1)*isize(2)*isize(3),mpi_real8,0,tag,mpi_comm_world,iret)
+
+         call mpi_send(u_base(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)&
+                      ,isize(1)*isize(2)*isize(3),mpi_real8,0,tag,mpi_comm_world,iret)
+         call mpi_send(v_base(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) &
+                       ,isize(1)*isize(2)*isize(3),mpi_real8,0,tag,mpi_comm_world,iret)
+         call mpi_send(w_base(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) &
+                      ,isize(1)*isize(2)*isize(3),mpi_real8,0,tag,mpi_comm_world,iret)
+         call mpi_send(b_base(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe) &
+                      ,isize(1)*isize(2)*isize(3),mpi_real8,0,tag,mpi_comm_world,iret)
+
 
     else if (my_pe==0) then
           call mpi_recv(ist,3,mpi_integer,n,tag,mpi_comm_world,status,iret)
@@ -160,6 +204,23 @@ subroutine write_diag_opt_balance
           call mpi_recv(a,isz(1)*isz(2)*isz(3),mpi_real8,n,tag,mpi_comm_world,status,iret)
           iret=nf_inq_varid(ncid,'b_bal',id)
           iret= nf_put_vara_double(ncid,id,(/ist(1),ist(2),ist(3),ilen/),(/isz(1),isz(2),isz(3),1/),a)
+
+          call mpi_recv(a,isz(1)*isz(2)*isz(3),mpi_real8,n,tag,mpi_comm_world,status,iret)
+          iret=nf_inq_varid(ncid,'u_base',id)
+          iret= nf_put_vara_double(ncid,id,(/ist(1),ist(2),ist(3),ilen/),(/isz(1),isz(2),isz(3),1/),a)
+
+          call mpi_recv(a,isz(1)*isz(2)*isz(3),mpi_real8,n,tag,mpi_comm_world,status,iret)
+          iret=nf_inq_varid(ncid,'v_base',id)
+          iret= nf_put_vara_double(ncid,id,(/ist(1),ist(2),ist(3),ilen/),(/isz(1),isz(2),isz(3),1/),a)
+
+          call mpi_recv(a,isz(1)*isz(2)*isz(3),mpi_real8,n,tag,mpi_comm_world,status,iret)
+          iret=nf_inq_varid(ncid,'w_base',id)
+          iret= nf_put_vara_double(ncid,id,(/ist(1),ist(2),ist(3),ilen/),(/isz(1),isz(2),isz(3),1/),a)
+
+          call mpi_recv(a,isz(1)*isz(2)*isz(3),mpi_real8,n,tag,mpi_comm_world,status,iret)
+          iret=nf_inq_varid(ncid,'b_base',id)
+          iret= nf_put_vara_double(ncid,id,(/ist(1),ist(2),ist(3),ilen/),(/isz(1),isz(2),isz(3),1/),a)
+
 
           deallocate(a)
     end if

@@ -178,7 +178,9 @@ program main
      print'(a,L)'     ,' enable_AB_3_order           = ',enable_AB_3_order
      print*,' '
  endif
-
+ 
+ time = 0.; itt = 0
+ taum2 = 1; taum1 = 2; tau = 3
 
  if (my_pe==0)  print *,' setting initial conditions '
  call flush(6)
@@ -194,10 +196,7 @@ program main
 
  if (my_pe==0)  print *,' starting main loop '
  call flush(6)
- 
- time = 0.
- itt = 0
-
+  
  !----------------------------------------------------------------------
  ! reading restart
  !----------------------------------------------------------------------
@@ -226,8 +225,10 @@ program main
       
    endif   
    call toc('diagnostics')
-        
-   n = taum2; taum2 = taum1; taum1 = tau; tau = n
+   
+   tau   = mod(tau,3)+1
+   taum1 = mod(taum1,3)+1
+   taum2 = mod(taum2,3)+1
    time = time + dt       
    itt = itt + 1 
    
