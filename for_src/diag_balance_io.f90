@@ -1,4 +1,165 @@
+#ifdef with_netcdf_parallel 
 
+subroutine init_diag_balance
+ use main_module
+ use module_diag_balance
+ implicit none
+ include "netcdf.inc"
+ include "mpif.h"
+ integer :: ncid,iret,xdim,ydim,zdim,tdim,id,i,j,k,nc_mode
+ real*8 :: x(nx),y(ny),z(nz)
+ 
+ call allocate_module_diag_balance
+ 
+ if (enable_diag_balance_chunks) then
+  if (my_pe==0) print*,' output in chunks not available for parallel netcdf'
+  call halt_stop(' in diag_balance_io.F90')
+ endif
+  
+ if (my_pe==0)  print*,'preparing file diag_balance.cdf'
+
+ nc_mode = IOR(nf_clobber,nf_mpiio)
+ nc_mode = IOR(nc_mode,nf_netcdf4 )
+ nc_mode = IOR(nc_mode,nf_classic_model )
+ 
+ iret = NF_CREATE_par('diag_balance.cdf',nc_mode,MPI_COMM_WORLD,MPI_INFO_NULL, ncid) 
+ if (my_pe==0.and.iret/=0) print*,'at opening:',nf_strerror(iret)
+ iret=nf_set_fill(ncid, NF_NOFILL, iret)
+
+ iret = nf_def_dim(ncid,'x', nx,xdim)
+ iret = nf_def_dim(ncid,'y', ny,ydim)
+ iret = nf_def_dim(ncid,'z', nz,zdim)  
+ iret = nf_def_dim(ncid,'Time', nf_unlimited,tdim)
+ 
+ iret = nf_def_var(ncid, 'x',NF_DOUBLE,1,xdim,id) 
+ iret = nf_put_att_text(ncid,id,'long_name',len_trim('x'),'x')
+ iret = nf_put_att_text(ncid,id,'units',len_trim('m'),'m')
+ 
+ iret = nf_def_var(ncid, 'y',NF_DOUBLE,1,ydim,id) 
+ iret = nf_put_att_text(ncid,id,'long_name',len_trim('y'),'y')
+ iret = nf_put_att_text(ncid,id,'units',len_trim('m'),'m') 
+ 
+ iret = nf_def_var(ncid, 'z',NF_DOUBLE,1,zdim,id) 
+ iret = nf_put_att_text(ncid,id,'long_name',len_trim('z'),'z')
+ iret = nf_put_att_text(ncid,id,'units',len_trim('m'),'m') 
+
+ iret = nf_def_var(ncid, 'Time',NF_DOUBLE,1,tdim,id)
+ iret = nf_put_att_text(ncid,id,'long_name',len_trim('time'),'time')
+ iret = nf_put_att_text(ncid,id,'unit',len_trim('seconds'),'seconds')
+
+ id  = ncvdef (ncid,'u0',NF_DOUBLE,4,(/xdim, ydim,zdim,tdim/),iret)
+ iret = nf_put_att_text(ncid,id,'long_name',len_trim('velocity'),'velocity')
+ iret = nf_put_att_text(ncid,id,'unit',len_trim('m/s'),'m/s')
+  
+ id  = ncvdef (ncid,'v0',NF_DOUBLE,4,(/xdim, ydim,zdim,tdim/),iret)
+ iret = nf_put_att_text(ncid,id,'long_name',len_trim('velocity'),'velocity')
+ iret = nf_put_att_text(ncid,id,'unit',len_trim('m/s'),'m/s')
+  
+ id  = ncvdef (ncid,'w0',NF_DOUBLE,4,(/xdim, ydim,zdim,tdim/),iret)
+ iret = nf_put_att_text(ncid,id,'long_name',len_trim('velocity'),'velocity')
+ iret = nf_put_att_text(ncid,id,'unit',len_trim('m/s'),'m/s')
+  
+ id  = ncvdef (ncid,'b0',NF_DOUBLE,4,(/xdim, ydim,zdim,tdim/),iret)
+ iret = nf_put_att_text(ncid,id,'long_name',len_trim('buoyancy'),'buoyancy')
+ iret = nf_put_att_text(ncid,id,'unit',len_trim('m/s^2'),'m/s^2')
+   
+ iret = NF_PUT_ATT_DOUBLE(ncid,NF_GLOBAL,'dx',NF_DOUBLE,1,dx)
+ iret = NF_PUT_ATT_DOUBLE(ncid,NF_GLOBAL,'dy',NF_DOUBLE,1,dy)
+ iret = NF_PUT_ATT_DOUBLE(ncid,NF_GLOBAL,'dz',NF_DOUBLE,1,dz)
+ iret = NF_PUT_ATT_DOUBLE(ncid,NF_GLOBAL,'N0',NF_DOUBLE,1,N0)
+ iret = NF_PUT_ATT_DOUBLE(ncid,NF_GLOBAL,'f0',NF_DOUBLE,1,f0)
+ iret = NF_PUT_ATT_DOUBLE(ncid,NF_GLOBAL,'Ro',NF_DOUBLE,1,Ro)
+ iret = NF_PUT_ATT_DOUBLE(ncid,NF_GLOBAL,'dsqr',NF_DOUBLE,1,dsqr)
+
+ iret= nf_enddef(ncid)
+ 
+ do i=1,nx
+   x(i)=(i-1)*dx
+ enddo     
+ iret=nf_inq_varid(ncid,'x',id)
+ iret= nf_put_vara_double(ncid,id,is_pe,ie_pe-is_pe+1,x(is_pe:ie_pe)) 
+
+ do j=1,ny
+   y(j)=(j-1)*dy
+ enddo 
+ iret=nf_inq_varid(ncid,'y',id)
+ iret= nf_put_vara_double(ncid,id,js_pe,je_pe-js_pe+1,y(js_pe:je_pe)) 
+
+ do k=1,nz
+   z(k)=(k-1)*dz
+ enddo   
+ iret=nf_inq_varid(ncid,'z',id)
+ iret= nf_put_vara_double(ncid,id,ks_pe,ke_pe-ks_pe+1,z(ks_pe:ke_pe)) 
+
+ iret= nf_close(ncid) 
+ if (my_pe==0) print*,' done'   
+   
+end subroutine init_diag_balance
+
+
+subroutine write_diag_balance 
+ use main_module
+ use module_diag_balance
+ implicit none
+ include "netcdf.inc"
+ include "mpif.h"
+ integer :: ncid,iret,id,nc_mode,start(4),count(4),ilen,k
+ real*8 :: aloc(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+ 
+ if (my_pe==0)  print*,'writing to file diag_balance.cdf'
+
+ nc_mode = IOR(nf_write,nf_mpiio)
+ nc_mode = IOR(nc_mode,nf_netcdf4 )
+ nc_mode = IOR(nc_mode,nf_classic_model )
+ 
+ iret = NF_open_par('diag_balance.cdf',nc_mode,MPI_COMM_WORLD,MPI_INFO_NULL, ncid) 
+ if (my_pe==0.and.iret/=0) print*,'at opening:',nf_strerror(iret)
+ iret=nf_set_fill(ncid, NF_NOFILL, iret)
+ 
+ iret=nf_inq_dimid(ncid,'Time',id)
+ iret=nf_inq_dimlen(ncid,id,ilen)
+ ilen=ilen+1
+ 
+ iret=nf_inq_varid(ncid,'Time',id) 
+ iret = nf_var_par_access(ncid, id, nf_collective)
+ iret= nf_put_vara_double(ncid,id,ilen,1,time) 
+ 
+ start = (/is_pe,        js_pe,        ks_pe        ,ilen/)
+ count = (/ie_pe-is_pe+1,je_pe-js_pe+1,ke_pe-ks_pe+1,1/)
+ 
+ iret=nf_inq_varid(ncid,'u0',id)
+ iret = nf_var_par_access(ncid, id, nf_collective)
+ aloc = u0(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+ iret= nf_put_vara_double(ncid,id,start,count,aloc)
+
+ iret=nf_inq_varid(ncid,'v0',id)
+ iret = nf_var_par_access(ncid, id, nf_collective)
+ aloc = v0(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+ iret= nf_put_vara_double(ncid,id,start,count,aloc)
+
+ iret=nf_inq_varid(ncid,'w0',id)
+ iret = nf_var_par_access(ncid, id, nf_collective)
+ aloc = w0(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+ iret= nf_put_vara_double(ncid,id,start,count,aloc)
+
+ iret=nf_inq_varid(ncid,'b0',id)
+ iret = nf_var_par_access(ncid, id, nf_collective)
+ aloc = b0(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+ iret= nf_put_vara_double(ncid,id,start,count,aloc)
+     
+ iret= nf_close(ncid) 
+  
+end subroutine write_diag_balance 
+
+
+subroutine write_diag_balance_chunks
+ use main_module
+ implicit none
+ if (my_pe==0) print*,' output in chunks not available for parallel netcdf'
+ call halt_stop(' in diag_balance_io.F90')
+end subroutine write_diag_balance_chunks
+
+#else
 
 subroutine init_diag_balance
  use main_module
@@ -540,3 +701,5 @@ subroutine write_diag_balance_chunks
 
  iret= nf_close(ncid) 
 end subroutine write_diag_balance_chunks
+
+#endif
