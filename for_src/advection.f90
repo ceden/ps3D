@@ -6,8 +6,8 @@ subroutine buoyancy_advection_2nd(db_loc)
   use main_module   
   implicit none
   integer :: i,j,k
-  real*8, dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx, &
-                    ks_pe-onx:ke_pe+onx) :: db_loc
+  real(real_type), dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx, &
+                             ks_pe-onx:ke_pe+onx) :: db_loc
  
    do k=ks_pe,ke_pe
    do j=js_pe,je_pe
@@ -57,8 +57,8 @@ subroutine momentum_advection_2nd(du_loc,dv_loc,dw_loc)
   use main_module   
   implicit none
   integer :: i,j,k
-  real*8, dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx, &
-                    ks_pe-onx:ke_pe+onx) :: du_loc, dv_loc, dw_loc
+  real(real_type), dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx, &
+                             ks_pe-onx:ke_pe+onx) :: du_loc, dv_loc, dw_loc
  !---------------------------------------------------------------------------------
  ! for zonal momentum
  !---------------------------------------------------------------------------------

@@ -1,14 +1,15 @@
 
 
 module main_module
- use p3DFFT
  implicit none
+
+ integer, parameter :: real_type = KIND(1.d0)
 
 !---------------------------------------------------------------------------------
 ! some fixed parameter
 !---------------------------------------------------------------------------------
-  real*8, parameter :: version = 0.1
-  real*8 :: pi = 3.14159265358979323846264338327950588 ! will be set below
+  real(real_type), parameter :: version = 0.1
+  real(real_type) :: pi = 3.14159265358979323846264338327950588 ! will be set below
 !---------------------------------------------------------------------------------
 ! switches for configuration
 !---------------------------------------------------------------------------------
@@ -22,55 +23,55 @@ module main_module
   integer :: diag_balance_filter_width  = 3 
   logical :: enable_diag_opt_balance    = .false.
   logical :: enable_diag_opt_time_ave   = .false.
-  real*8  :: opt_balance_period         = 1.
-  real*8  :: opt_balance_average        = 1.
+  real(real_type)  :: opt_balance_period         = 1.
+  real(real_type)  :: opt_balance_average        = 1.
   integer :: opt_balance_max_Itts       = 100
   integer :: opt_balance_average_times  = 1
-  real*8  :: opt_balance_tol            = 1d-9
+  real(real_type)  :: opt_balance_tol            = 1d-9
  
 !---------------------------------------------------------------------------------
 ! model parameter
 !---------------------------------------------------------------------------------
   integer:: nx,ny,nz    ! number of grid points   
-  real*8 :: Lx,Ly,Lz    ! extent of domain in m
-  real*8 :: dx,dy,dz    ! extent of grid cell in m
-  real*8 :: dt          ! time step
-  real*8 :: f0          ! Coriolis freq.
-  real*8 :: N0          ! Stability freq.
+  real(real_type) :: Lx,Ly,Lz    ! extent of domain in m
+  real(real_type) :: dx,dy,dz    ! extent of grid cell in m
+  real(real_type) :: dt          ! time step
+  real(real_type) :: f0          ! Coriolis freq.
+  real(real_type) :: N0          ! Stability freq.
  
-  real*8 :: Kh = 0d0  ! harmonic diffusivity
-  real*8 :: Kv = 0d0  ! harmonic diffusivity
-  real*8 :: Ah = 0d0  ! lateral harmonic viscosity
-  real*8 :: Av = 0d0  ! vertical harmonic viscosity
+  real(real_type) :: Kh = 0d0  ! harmonic diffusivity
+  real(real_type) :: Kv = 0d0  ! harmonic diffusivity
+  real(real_type) :: Ah = 0d0  ! lateral harmonic viscosity
+  real(real_type) :: Av = 0d0  ! vertical harmonic viscosity
   
-  real*8 :: Khbi = 0d0  ! biharmonic diffusivity
-  real*8 :: Kvbi = 0d0  ! biharmonic diffusivity
-  real*8 :: Ahbi = 0d0  ! lateral biharmonic viscosity
-  real*8 :: Avbi = 0d0  ! vertical biharmonic viscosity
-  real*8 :: Ro=1., dsqr=1.
+  real(real_type) :: Khbi = 0d0  ! biharmonic diffusivity
+  real(real_type) :: Kvbi = 0d0  ! biharmonic diffusivity
+  real(real_type) :: Ahbi = 0d0  ! lateral biharmonic viscosity
+  real(real_type) :: Avbi = 0d0  ! vertical biharmonic viscosity
+  real(real_type) :: Ro=1., dsqr=1.
 !---------------------------------------------------------------------------------
 ! time stepping parameter
 !---------------------------------------------------------------------------------
   integer ::  taum2 = 1, taum1 = 2, tau = 3 !  time step index
-  real*8  :: eps_ab                         ! Adam-Bashforth weighting
-  real*8, parameter :: AB3_a=  23d0/12d0 , AB3_b = -16d0/12d0, AB3_c = 5d0/12d0
+  real(real_type)  :: eps_ab                         ! Adam-Bashforth weighting
+  real(real_type), parameter :: AB3_a=  23d0/12d0 , AB3_b = -16d0/12d0, AB3_c = 5d0/12d0
   integer :: itt = 0                ! current time step number
-  real*8 :: time,runlen = 0.        ! current time in s, length of integration in s
+  real(real_type) :: time,runlen = 0.        ! current time in s, length of integration in s
 
 !---------------------------------------------------------------------------------
 ! model fields
 !---------------------------------------------------------------------------------
-  real*8, allocatable :: u(:,:,:),du(:,:,:,:)    ! velocity and tendency
-  real*8, allocatable :: v(:,:,:),dv(:,:,:,:)    ! velocity and tendency
-  real*8, allocatable :: w(:,:,:),dw(:,:,:,:)    ! velocity and tendency
-  real*8, allocatable :: b(:,:,:),db(:,:,:,:)    ! buoyancy and tendency
-  real*8, allocatable :: p(:,:,:)                ! pressure
+  real(real_type), allocatable :: u(:,:,:),du(:,:,:,:)    ! velocity and tendency
+  real(real_type), allocatable :: v(:,:,:),dv(:,:,:,:)    ! velocity and tendency
+  real(real_type), allocatable :: w(:,:,:),dw(:,:,:,:)    ! velocity and tendency
+  real(real_type), allocatable :: b(:,:,:),db(:,:,:,:)    ! buoyancy and tendency
+  real(real_type), allocatable :: p(:,:,:)                ! pressure
   
-  real*8, allocatable :: flux_east(:,:,:) ! auxilliary fields
-  real*8, allocatable :: flux_north(:,:,:)
-  real*8, allocatable :: flux_top(:,:,:)
+  real(real_type), allocatable :: flux_east(:,:,:) ! auxilliary fields
+  real(real_type), allocatable :: flux_north(:,:,:)
+  real(real_type), allocatable :: flux_top(:,:,:)
 
-  real*8, allocatable :: kx(:),ky(:),kz(:)  ! wavenumber grid
+  real(real_type), allocatable :: kx(:),ky(:),kz(:)  ! wavenumber grid
 !---------------------------------------------------------------------------------
 !     Parallel domain setup
 !---------------------------------------------------------------------------------
@@ -95,15 +96,15 @@ module main_module
   integer :: istart(3),iend(3),isize(3) ! physical grid point index of this processor 
   integer :: fstart(3),fend(3),fsize(3) ! spectral grid point index of this processor
   
-  complex(p3dfft_type), allocatable :: FS(:,:,:)
-  real*8, allocatable :: ksqr(:,:,:)
-  real*8, allocatable :: psi(:,:),phi(:,:),psib(:,:) ! vertical modes
+  complex(real_type), allocatable :: FS(:,:,:)
+  real(real_type), allocatable :: ksqr(:,:,:)
+  real(real_type), allocatable :: psi(:,:),phi(:,:),psib(:,:) ! vertical modes
 
 !---------------------------------------------------------------------------------
 ! diagnostic setup
 !---------------------------------------------------------------------------------
  logical :: enable_diag_snap = .false.
- real*8 :: tsmonint = 0. , snapint = 0.
+ real(real_type) :: tsmonint = 0. , snapint = 0.
 end module main_module
 
 
@@ -133,13 +134,11 @@ subroutine  allocate_main_module
  if (enable_vertical_boundaries) then
   allocate(psi(nz,nz),phi(nz,nz),psib(nz,nz) )
   psi=0;phi=0;psib=0
-  allocate( ksqr(fstart(1):fend(1),fstart(2):fend(2),1) )
-  allocate( FS(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3)) )
-  ksqr = 0.; FS = 0.
+  allocate( ksqr(fstart(1):fend(1),fstart(2):fend(2),1) ) ;ksqr = 0.
  else
-  allocate( ksqr(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3)) )
-  allocate( FS(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3)) )
-  ksqr = 0.; FS = 0.
+  allocate( ksqr(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3)) );ksqr = 0.
  endif
-
+ allocate( FS(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3)) ); FS = 0.
+ allocate( kx(nx/2+1), ky(ny), kz(nz) )
+ 
 end subroutine  allocate_main_module

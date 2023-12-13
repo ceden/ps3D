@@ -3,25 +3,24 @@
 module module_diag_balance
  use main_module
  implicit none
- complex(p3dfft_type),allocatable :: US(:,:,:),VS(:,:,:),WS(:,:,:),BS(:,:,:)
- complex*16, allocatable :: f1p(:,:,:),f1m(:,:,:)
- complex*16, allocatable :: I_00(:,:,:),I_0p(:,:,:),I_0m(:,:,:)
- complex*16, allocatable :: I_f1p(:,:,:),I_f1m(:,:,:)
- complex*16, allocatable :: I_0f1p(:,:,:),I_0f1m(:,:,:)
- complex*16, allocatable :: I_pT0p(:,:,:),I_pT0m(:,:,:)
- real*8 ,allocatable :: u0(:,:,:),v0(:,:,:),w0(:,:,:),b0(:,:,:)
- real*8 ,allocatable :: pTu0(:,:,:),pTv0(:,:,:),pTw0(:,:,:),pTb0(:,:,:)
- real*8 ,allocatable :: u1(:,:,:),v1(:,:,:),w1(:,:,:),b1(:,:,:)
- real*8 ,allocatable :: u2(:,:,:),v2(:,:,:),w2(:,:,:),b2(:,:,:)
- real*8 ,allocatable :: u3(:,:,:),v3(:,:,:),w3(:,:,:),b3(:,:,:)
+ complex(real_type),allocatable :: US(:,:,:),VS(:,:,:),WS(:,:,:),BS(:,:,:)
+ complex(real_type), allocatable :: f1p(:,:,:),f1m(:,:,:)
+ complex(real_type), allocatable :: I_00(:,:,:),I_0p(:,:,:),I_0m(:,:,:)
+ complex(real_type), allocatable :: I_f1p(:,:,:),I_f1m(:,:,:)
+ complex(real_type), allocatable :: I_0f1p(:,:,:),I_0f1m(:,:,:)
+ complex(real_type), allocatable :: I_pT0p(:,:,:),I_pT0m(:,:,:)
+ real(real_type) ,allocatable :: u0(:,:,:),v0(:,:,:),w0(:,:,:),b0(:,:,:)
+ real(real_type) ,allocatable :: pTu0(:,:,:),pTv0(:,:,:),pTw0(:,:,:),pTb0(:,:,:)
+ real(real_type) ,allocatable :: u1(:,:,:),v1(:,:,:),w1(:,:,:),b1(:,:,:)
+ real(real_type) ,allocatable :: u2(:,:,:),v2(:,:,:),w2(:,:,:),b2(:,:,:)
+ real(real_type) ,allocatable :: u3(:,:,:),v3(:,:,:),w3(:,:,:),b3(:,:,:)
  
- complex*16, allocatable :: f2p(:,:,:),f2m(:,:,:)
- complex*16, allocatable :: I_f2p(:,:,:),I_f2m(:,:,:)
- complex*16, allocatable :: I_0f2p(:,:,:),I_0f2m(:,:,:)
- complex*16, allocatable :: pTf2p(:,:,:),pTf2m(:,:,:)
+ complex(real_type), allocatable :: f2p(:,:,:),f2m(:,:,:)
+ complex(real_type), allocatable :: I_f2p(:,:,:),I_f2m(:,:,:)
+ complex(real_type), allocatable :: I_0f2p(:,:,:),I_0f2m(:,:,:)
+ complex(real_type), allocatable :: pTf2p(:,:,:),pTf2m(:,:,:)
 
  character*80 :: balance_name
- 
 end module module_diag_balance 
 
 
@@ -112,8 +111,8 @@ subroutine diag_balance_zero_order
  use module_diag_balance
  implicit none
  integer :: i,j,k
- complex*16 :: qx,qy,qz,qb,px,py,pz,pb,g0
- complex(p3dfft_type),parameter  :: im = (0d0,1d0)
+ complex(real_type) :: qx,qy,qz,qb,px,py,pz,pb,g0
+ complex(real_type),parameter  :: im = (0d0,1d0)
  
  call forward_transform(u,v,w,b,US,VS,WS,BS)
  do k=fstart(3),fend(3)
@@ -138,11 +137,11 @@ subroutine diag_balance_first_order
  use module_diag_balance
  implicit none
  integer :: i,j,k
- complex*16 :: px0,py0,pz0,pb0
- complex*16 :: qxm,qym,qzm,qbm,pxm,pym,pzm,pbm
- complex*16 :: qxp,qyp,qzp,qbp,pxp,pyp,pzp,pbp
- real*8 :: om2,om
- complex(p3dfft_type),parameter  :: im = (0d0,1d0)
+ complex(real_type) :: px0,py0,pz0,pb0
+ complex(real_type) :: qxm,qym,qzm,qbm,pxm,pym,pzm,pbm
+ complex(real_type) :: qxp,qyp,qzp,qbp,pxp,pyp,pzp,pbp
+ real(real_type)    :: om2,om
+ complex(real_type),parameter  :: im = (0d0,1d0)
  
  call model_nonlin(u0,v0,w0,b0,US,VS,WS,BS)
  
@@ -183,11 +182,11 @@ subroutine diag_balance_second_order
  use module_diag_balance
  implicit none
  integer :: i,j,k
- complex*16 :: qx0,qy0,qz0,qb0
- complex*16 :: qxm,qym,qzm,qbm,pxm,pym,pzm,pbm,pTf1p,pTf1m
- complex*16 :: qxp,qyp,qzp,qbp,pxp,pyp,pzp,pbp,pTg0,I_0pT0p,I_0pT0m
- real*8 :: om2,om
- complex(p3dfft_type),parameter  :: im = (0d0,1d0)
+ complex(real_type) :: qx0,qy0,qz0,qb0
+ complex(real_type) :: qxm,qym,qzm,qbm,pxm,pym,pzm,pbm,pTf1p,pTf1m
+ complex(real_type) :: qxp,qyp,qzp,qbp,pxp,pyp,pzp,pbp,pTg0,I_0pT0p,I_0pT0m
+ real(real_type)    :: om2,om
+ complex(real_type),parameter  :: im = (0d0,1d0)
 
  call model_nonlin(u1/Ro,v1/Ro,w1/Ro,b1/Ro,US,VS,WS,BS)
  
@@ -278,11 +277,11 @@ subroutine diag_balance_third_order
  use module_diag_balance
  implicit none
  integer :: i,j,k
- complex*16 :: qx0,qy0,qz0,qb0,px0,py0,pz0,pb0,f3p,f3m,g0
- complex*16 :: qxm,qym,qzm,qbm,pxm,pym,pzm,pbm
- complex*16 :: qxp,qyp,qzp,qbp,pxp,pyp,pzp,pbp
- real*8 :: om2,om
- complex(p3dfft_type),parameter  :: im = (0d0,1d0)
+ complex(real_type) :: qx0,qy0,qz0,qb0,px0,py0,pz0,pb0,f3p,f3m,g0
+ complex(real_type) :: qxm,qym,qzm,qbm,pxm,pym,pzm,pbm
+ complex(real_type) :: qxp,qyp,qzp,qbp,pxp,pyp,pzp,pbp
+ real(real_type) :: om2,om
+ complex(real_type),parameter  :: im = (0d0,1d0)
     
   call model_nonlin(u2/Ro**2,v2/Ro**2,w2/Ro**2,b2/Ro**2,US,VS,WS,BS)
   do k=fstart(3),fend(3)
@@ -367,8 +366,8 @@ end subroutine diag_balance_third_order
 subroutine vec_q(kx_loc,ky_loc,kz_loc,s,qx,qy,qz,qb)
  use main_module
  implicit none
- real*8, intent(in) :: kx_loc,ky_loc,kz_loc,s
- complex*16, intent(out) :: qx,qy,qz,qb
+ real(real_type), intent(in) :: kx_loc,ky_loc,kz_loc,s
+ complex(real_type), intent(out) :: qx,qy,qz,qb
  if (enable_vertical_boundaries) then
        call vec_q_vbc(kx_loc,ky_loc,kz_loc,dx,dy,dz,s,f0,N0,dsqr,qx,qy,qz,qb)
  else
@@ -380,8 +379,8 @@ end subroutine vec_q
 subroutine vec_p(kx_loc,ky_loc,kz_loc,s,qx,qy,qz,qb)
  use main_module
  implicit none
- real*8, intent(in) :: kx_loc,ky_loc,kz_loc,s
- complex*16, intent(out) :: qx,qy,qz,qb
+ real(real_type), intent(in) :: kx_loc,ky_loc,kz_loc,s
+ complex(real_type), intent(out) :: qx,qy,qz,qb
  if (enable_vertical_boundaries) then
        call vec_p_vbc(kx_loc,ky_loc,kz_loc,dx,dy,dz,s,f0,N0,dsqr,qx,qy,qz,qb)
  else
@@ -393,8 +392,8 @@ end subroutine vec_p
 subroutine omega2(kx_loc,ky_loc,kz_loc,om2)
  use main_module
  implicit none
- real*8, intent(in) :: kx_loc,ky_loc,kz_loc
- real*8, intent(out) :: om2
+ real(real_type), intent(in) :: kx_loc,ky_loc,kz_loc
+ real(real_type), intent(out) :: om2
 
  if (enable_vertical_boundaries) then
        call omega2_vbc(kx_loc,ky_loc,kz_loc,dx,dy,dz,f0,N0,dsqr,om2)
@@ -409,8 +408,8 @@ end subroutine omega2
 subroutine coeff_p(kx_loc,ky_loc,kz_loc,s,p_loc) 
  use main_module
  implicit none
- real*8, intent(in) :: kx_loc,ky_loc,kz_loc,s
- real*8, intent(out) :: p_loc
+ real(real_type), intent(in) :: kx_loc,ky_loc,kz_loc,s
+ real(real_type), intent(out) :: p_loc
   if (enable_vertical_boundaries) then
       call coeff_p_vbc(kx_loc,ky_loc,kz_loc,dx,dy,dz,s,f0,N0,dsqr,p_loc)
   else
@@ -422,8 +421,8 @@ end subroutine coeff_p
 subroutine forward_transform(u_in,v_in,w_in,b_in,u_out,v_out,w_out,b_out)
  use main_module
  implicit none
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)::u_in,v_in,w_in,b_in
- complex*16,dimension(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3))::u_out,v_out,w_out,b_out  
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)::u_in,v_in,w_in,b_in
+ complex(real_type),dimension(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3))::u_out,v_out,w_out,b_out  
 
  if (enable_vertical_boundaries) then
   call my_fft_vert_mode (u_in(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe),u_out,phi)
@@ -442,8 +441,8 @@ end subroutine forward_transform
 subroutine backward_transform(u_in,v_in,w_in,b_in,u_out,v_out,w_out,b_out)
  use main_module
  implicit none
- complex*16,dimension(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3))::u_in,v_in,w_in,b_in
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)::u_out,v_out,w_out,b_out  
+ complex(real_type),dimension(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3))::u_in,v_in,w_in,b_in
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)::u_out,v_out,w_out,b_out  
 
  if (enable_vertical_boundaries) then
   call my_ifft_vert_mode(u_in,u_out(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe),phi)
@@ -466,15 +465,15 @@ end subroutine backward_transform
 subroutine model_run(u_in,v_in,w_in,b_in,u_out,v_out,w_out,b_out,max_steps)
  use main_module
  implicit none
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_in,v_in
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: w_in,b_in
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_out,v_out
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: w_out,b_out
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_in,v_in
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: w_in,b_in
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_out,v_out
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: w_out,b_out
  integer :: n,max_steps,tau_loc,taum1_loc,taum2_loc,itt_loc
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_loc,v_loc
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: w_loc,b_loc,p_loc
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx,3):: du_loc,dv_loc
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx,3):: dw_loc,db_loc
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_loc,v_loc
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: w_loc,b_loc,p_loc
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx,3):: du_loc,dv_loc
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx,3):: dw_loc,db_loc
  
  ! save model state
  u_loc = u; v_loc = v ; w_loc = w; b_loc = b; p_loc = p
@@ -501,14 +500,14 @@ end subroutine model_run
 subroutine model_nonlin(u_in,v_in,w_in,b_in,u_out,v_out,w_out,b_out)
  use main_module
  implicit none
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_in,v_in,w_in,b_in
- complex*16,dimension(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3))::u_out,v_out,w_out,b_out
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_in,v_in,w_in,b_in
+ complex(real_type),dimension(fstart(1):fend(1),fstart(2):fend(2),fstart(3):fend(3))::u_out,v_out,w_out,b_out
  integer :: i,j,k
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_loc,v_loc
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: w_loc,b_loc
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: du_loc,dv_loc
- real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: dw_loc,db_loc
- real*8 :: fxa
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_loc,v_loc
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: w_loc,b_loc
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: du_loc,dv_loc
+ real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: dw_loc,db_loc
+ real(real_type) :: fxa
  
  u_loc = u; v_loc = v ; w_loc = w; b_loc = b
  u = u_in; v = v_in; w = w_in; b = b_in

@@ -40,8 +40,8 @@ subroutine global_max(x)
 !--------------------------------------------------------------
       use main_module   
       implicit none
-      real*8,intent(inout)    :: x
-      real*8    :: x_sym,x_sym2
+      real(real_type),intent(inout)    :: x
+      real(real_type)    :: x_sym,x_sym2
       integer :: ierr
       include "mpif.h"
       x_sym = x
@@ -57,8 +57,8 @@ subroutine global_sum(x)
 !--------------------------------------------------------------
       use main_module   
       implicit none
-      real*8,intent(inout)    :: x
-      real*8    :: x_sym,x_sym2
+      real(real_type),intent(inout)    :: x
+      real(real_type)    :: x_sym,x_sym2
       integer :: ierr
       include "mpif.h"
       x_sym = x
@@ -74,7 +74,7 @@ subroutine border_exchg_3D(a)
 !--------------------------------------------------------------
   use main_module   
   implicit none
-  real*8, intent(inout)  :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
+  real(real_type), intent(inout)  :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
   call border_exchg_in_z(a)
   call border_exchg_in_y(a)
   call border_exchg_in_x(a)
@@ -88,7 +88,7 @@ subroutine border_exchg_in_x(a)
 !--------------------------------------------------------------
   use main_module   
   implicit none
-  real*8, intent(inout)  :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
+  real(real_type), intent(inout)  :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
   integer  ::  tag=0, ierr,i,len,east,west
   include "mpif.h"
   integer,dimension(MPI_STATUS_SIZE)  :: Status
@@ -131,7 +131,7 @@ subroutine border_exchg_in_y(a)
 !--------------------------------------------------------------
   use main_module   
   implicit none
-  real*8, intent(inout)  :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
+  real(real_type), intent(inout)  :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
   integer  ::  tag=0, ierr,j,len,north,south
   include "mpif.h"
   integer,dimension(MPI_STATUS_SIZE)  :: Status
@@ -176,7 +176,7 @@ subroutine border_exchg_in_z(a)
 !--------------------------------------------------------------
   use main_module   
   implicit none
-  real*8, intent(inout)  :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
+  real(real_type), intent(inout)  :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
   integer  ::  tag=0, ierr,k,len,top,bottom
   include "mpif.h"
   integer,dimension(MPI_STATUS_SIZE)  :: Status
@@ -219,7 +219,7 @@ subroutine cumsum_in_z(a)
 !--------------------------------------------------------------
   use main_module   
   implicit none
-  real*8,intent(inout) :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
+  real(real_type),intent(inout) :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
   integer :: n,k,k1
   
   call border_exchg_in_z(a)
@@ -247,7 +247,7 @@ subroutine cumsum_in_y(a)
 !--------------------------------------------------------------
   use main_module   
   implicit none
-  real*8,intent(inout) :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
+  real(real_type),intent(inout) :: a(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
   integer :: n,j,j1
   
   call border_exchg_in_y(a)

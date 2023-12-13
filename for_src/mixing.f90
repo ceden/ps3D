@@ -8,8 +8,8 @@ subroutine biharmonic(p1,Hmix,Vmix)
  use main_module   
  implicit none
  integer :: i,j,k
- real*8 :: p1(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx),Hmix,Vmix
- real*8 :: del2(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
+ real(real_type) :: p1(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx),Hmix,Vmix
+ real(real_type) :: del2(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
 
  do k=ks_pe-1,ke_pe+1
   do j=js_pe-1,je_pe+1
@@ -100,8 +100,8 @@ subroutine biharmonic_h(p1,Hmix)
  use main_module   
  implicit none
  integer :: i,j,k
- real*8 :: p1(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx),Hmix
- real*8 :: del2(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
+ real(real_type) :: p1(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx),Hmix
+ real(real_type) :: del2(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
 
  do k=ks_pe-1,ke_pe+1
   do j=js_pe-1,je_pe+1
@@ -168,8 +168,8 @@ subroutine biharmonic_v(p1,Vmix)
  use main_module   
  implicit none
  integer :: i,j,k
- real*8 :: p1(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx),Vmix
- real*8 :: del2(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
+ real(real_type) :: p1(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx),Vmix
+ real(real_type) :: del2(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx)
 
 
  do k=ks_pe-2,ke_pe+1
@@ -229,7 +229,7 @@ subroutine harmonic(p1,Hmix,Vmix)
  use main_module   
  implicit none
  integer :: i,j,k
- real*8 :: p1(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx),Hmix,Vmix
+ real(real_type) :: p1(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx),Hmix,Vmix
 
 
  do k=ks_pe-1,ke_pe+1

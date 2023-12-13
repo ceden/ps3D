@@ -3,14 +3,14 @@
 module module_diag_opt_balance
   use main_module
   implicit none
-  real*8 ,allocatable :: u_bal(:,:,:),v_bal(:,:,:),w_bal(:,:,:),b_bal(:,:,:)
-  complex(p3dfft_type),allocatable :: US(:,:,:),VS(:,:,:),WS(:,:,:),BS(:,:,:),g0_base(:,:,:)
+  real(real_type) ,allocatable :: u_bal(:,:,:),v_bal(:,:,:),w_bal(:,:,:),b_bal(:,:,:)
+  complex(real_type),allocatable :: US(:,:,:),VS(:,:,:),WS(:,:,:),BS(:,:,:),g0_base(:,:,:)
   integer :: n_end,n_end_ave
-  real*8 :: Ro_loc, dt_loc
-  real*8 :: norm_diff
-  real*8 ,allocatable :: u_base(:,:,:),v_base(:,:,:),w_base(:,:,:),b_base(:,:,:)
-  real*8 ,allocatable :: u_save(:,:,:),v_save(:,:,:),w_save(:,:,:),b_save(:,:,:)
-  real*8 ,allocatable :: u_ave(:,:,:), v_ave(:,:,:), w_ave(:,:,:), b_ave(:,:,:)
+  real(real_type) :: Ro_loc, dt_loc
+  real(real_type) :: norm_diff
+  real(real_type) ,allocatable :: u_base(:,:,:),v_base(:,:,:),w_base(:,:,:),b_base(:,:,:)
+  real(real_type) ,allocatable :: u_save(:,:,:),v_save(:,:,:),w_save(:,:,:),b_save(:,:,:)
+  real(real_type) ,allocatable :: u_ave(:,:,:), v_ave(:,:,:), w_ave(:,:,:), b_ave(:,:,:)
  
 end module module_diag_opt_balance
 
@@ -56,10 +56,8 @@ subroutine diag_opt_balance()
   use main_module
   use module_diag_opt_balance
   implicit none
- 
-  
-  real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx,3):: du_loc,dv_loc,dw_loc,db_loc
-  real*8,dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_loc, v_loc, w_loc, b_loc, p_loc
+  real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx,3):: du_loc,dv_loc,dw_loc,db_loc
+  real(real_type),dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx):: u_loc, v_loc, w_loc, b_loc, p_loc
   integer :: tau_loc,taum1_loc,taum2_loc,itt_loc
   integer :: n,m
   logical,save  ::  first = .true. 
@@ -186,7 +184,7 @@ subroutine opt_backward_integration
   use main_module
   use module_diag_opt_balance
   implicit none
-  real*8 :: rho, ramp, Ahbi_loc, Avbi_loc, Khbi_loc, Kvbi_loc
+  real(real_type) :: rho, ramp, Ahbi_loc, Avbi_loc, Khbi_loc, Kvbi_loc
   integer :: n
 
   ! Disable friction for backward integration
@@ -216,7 +214,7 @@ subroutine opt_forward_integration
   use main_module
   use module_diag_opt_balance
   implicit none
-  real*8 :: rho, ramp
+  real(real_type) :: rho, ramp
   integer :: n
 
   itt = 0 ; taum2 = 1; taum1 = 2 ; tau = 3
@@ -237,7 +235,7 @@ subroutine opt_time_ave(u_loc,v_loc,w_loc,b_loc)
   use main_module
   use module_diag_opt_balance
   implicit none
-  real*8, dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx) :: u_loc,v_loc,w_loc,b_loc
+  real(real_type), dimension(is_pe-onx:ie_pe+onx,js_pe-onx:je_pe+onx,ks_pe-onx:ke_pe+onx) :: u_loc,v_loc,w_loc,b_loc
   integer :: n
   
   itt = 0 ; taum2 = 1; taum1 = 2 ; tau = 3
@@ -267,7 +265,7 @@ subroutine geostrophic_base_point
   use module_diag_opt_balance
   implicit none
   integer :: i,j,k
-  complex*16 :: qx,qy,qz,qb,px,py,pz,pb
+  complex(real_type) :: qx,qy,qz,qb,px,py,pz,pb
 
   call forward_transform(u,v,w,b,US,VS,WS,BS)    ! dfft für aktuellen chunk
   do k=fstart(3),fend(3)         ! Loop through spectral array
@@ -292,7 +290,7 @@ subroutine normal_mode_projection
   use module_diag_opt_balance
   implicit none
   integer :: i,j,k
-  complex*16 :: qx,qy,qz,qb,px,py,pz,pb,g0
+  complex(real_type) :: qx,qy,qz,qb,px,py,pz,pb,g0
 
   call forward_transform(u,v,w,b,US,VS,WS,BS)    ! dfft für aktuellen chunk
   do k=fstart(3),fend(3)         ! Loop through spectral array
@@ -317,7 +315,7 @@ subroutine exchange_geostrophic_base_point
   use module_diag_opt_balance
   implicit none
   integer :: i,j,k
-  complex*16 :: qx,qy,qz,qb,px,py,pz,pb,g0
+  complex(real_type) :: qx,qy,qz,qb,px,py,pz,pb,g0
   
   call forward_transform(u,v,w,b,US,VS,WS,BS)    ! dfft für aktuellen chunk
   do k=fstart(3),fend(3)         ! Loop through spectral array
@@ -342,7 +340,7 @@ subroutine opt_balance_norm()
   use main_module
   use module_diag_opt_balance
   implicit none
-  real*8 :: e1, e2, d
+  real(real_type) :: e1, e2, d
   integer :: i, j, k
 
   e1=0d0; e2=0d0; d=0d0
@@ -368,10 +366,11 @@ end subroutine opt_balance_norm
 
 function ramp(theta)
   implicit none 
-  real*8, intent(in) :: theta
-  real*8 :: ramp
-  !real*8 :: pi = 3.14159265358979323846264338327950588
-  real*8 :: t1,t2
+  integer, parameter :: real_type = KIND(1.d0)
+  real(real_type), intent(in) :: theta
+  real(real_type) :: ramp
+  !real(real_type) :: pi = 3.14159265358979323846264338327950588
+  real(real_type) :: t1,t2
   !ramp = (1d0-cos(pi*theta))*0.5d0
   t1 = 1./max(1d-32,theta )
   t2 = 1./max(1d-32,1d0-theta )

@@ -4,9 +4,8 @@ program main
  use timing_module   
  implicit none
  include "mpif.h"
- integer :: ierr,i,j,k,k2,iargc,n
+ integer :: ierr,iargc,n
  character (len=80) :: arg
- real*8,external :: hat_ksqr
  
  !----------------------------------------------------------------------
  ! initialize parallelisation with MPI
@@ -74,85 +73,16 @@ program main
  call flush(6)
  call allocate_main_module()
  
- !----------------------------------------------------------------------
- ! wavenumber grid
- !----------------------------------------------------------------------
+ call wavenumber_initialisation
 
- allocate( kx(nx/2+1), ky(ny), kz(nz) )
- 
- do i=1,nx/2+1
-   kx(i) =  2*(i-1)*pi/Lx
- enddo
- do j=1,(ny+1)/2
-   ky(j) =  2*(j-1)*pi/Ly 
- enddo 
- do j=(ny+1)/2+1,ny
-   ky(j) =  -2*(ny-j+1)*pi/Ly
- enddo
- 
- if (enable_vertical_boundaries) then
-  do k=1,nz
-   kz(k) =  (k-1.)*pi/Lz  
-  enddo 
+ if (my_pe==0)  print *,' initialization of diagnostic output  '
+ call flush(6)
+
+ if (enable_diag_snap) call init_snap_cdf
+ if (enable_diag_balance.or.enable_diag_balance_chunks) call init_diag_balance
+ if (enable_diag_opt_balance) call init_diag_opt_balance
    
-  phi(:,1) = sqrt(1./Lz)
-  psi(:,1) = 0d0
-  psib(:,1) = 0d0
-  do k2=2,nz
-   do k=1,nz
-     psi(k,k2) = sqrt(2./Lz)*sin((k2-1)*k*pi/nz)
-   enddo  
-   k=1
-   phi(k,k2) = (psi(k,k2))/(2*sin((k2-1)*pi/(2*nz)) )
-   psib(k,k2)= (psi(k,k2))/(2*cos((k2-1)*pi/(2*nz)) )
-   do k=2,nz
-    phi(k,k2) = (psi(k,k2)-psi(k-1,k2))/(2*sin((k2-1)*pi/(2*nz)) )
-    psib(k,k2)= (psi(k,k2)+psi(k-1,k2))/(2*cos((k2-1)*pi/(2*nz)) )
-   enddo
-    
-  enddo
-  
- else
-  do k=1,(nz+1)/2
-   kz(k) =  2*(k-1)*pi/Lz 
-  enddo 
-  do k=(nz+1)/2+1,nz
-   kz(k) =  -2*(nz-k+1)*pi/Lz
-  enddo
- endif 
- 
-
- !----------------------------------------------------------------------
- ! wavenumber related stuff
- !----------------------------------------------------------------------
- if (enable_vertical_boundaries) then
-   do j=fstart(2),fend(2)
-    do i=fstart(1),fend(1)
-       ksqr(i,j,1) =  hat_ksqr(kx(i),dx) + hat_ksqr(ky(j),dy) 
-    enddo
-   enddo
- else
-   do k=fstart(3),fend(3)
-    do j=fstart(2),fend(2)
-     do i=fstart(1),fend(1)
-      ksqr(i,j,k) =  hat_ksqr(kx(i),dx) + hat_ksqr(ky(j),dy) + hat_ksqr(kz(k),dz)/dsqr
-     enddo
-    enddo   
-   enddo 
- endif
-
-
-
-  if (my_pe==0)  print *,' initialization of diagnostic output  '
-  call flush(6)
-
-  if (enable_diag_snap) call init_snap_cdf
-  !if (enable_diag_spec) call init_diag_spec()
-  !if (enable_diag_snap_chunks) call init_snap_cdf_chunks
-  if (enable_diag_balance.or.enable_diag_balance_chunks) call init_diag_balance
-  if (enable_diag_opt_balance) call init_diag_opt_balance
-   
-  if (my_pe==0) then
+ if (my_pe==0) then
      print*,' '
      print'(a,i4,a,i4,a,i4)',' nx x ny x nz = ',nx,' x ',ny,' x ',nz
      print'(a,f8.2,a,f8.2,a,f8.2,a)',' Lx x Ly x Lz = ',Lx,' x ',Ly,' x ',Lz,' m'
@@ -214,10 +144,7 @@ program main
    if ( mod(itt,max(1,int(tsmonint/dt)))  == 0 .or. itt == 0)  call diagnose  
    if ( mod(itt,max(1,int( snapint/dt)))  == 0 .or. itt == 0)  then      
       if (enable_diag_snap)     call diag_snap()      
-      !if (enable_diag_snap_par) call diag_snap_par()
-      !if (enable_diag_spec)     call diag_spec()
       if (enable_diag_balance.or.enable_diag_balance_chunks)  call diag_balance()
-      !if (enable_diag_snap_chunks) call diag_snap_chunks()
       if (enable_diag_opt_balance) then
          call diag_opt_balance()       
          call write_diag_opt_balance()
@@ -277,85 +204,5 @@ end program main
 
 
 
-
-
-
-subroutine p3dfft_initialization
- use main_module
- implicit none
- include "mpif.h"
- integer :: n,ierr
- 
- ! Set up work structures for P3DFFT
- if (my_pe==0)  print *,'Setting up P3DFFT '
- call p3dfft_setup ((/n_pes_x,n_pes_y/),nx,ny,nz,MPI_COMM_WORLD,overwrite=.false.)
- if (my_pe==0)  print *,'Done setting up P3DFFT '
- 
- 
- ! Get dimensions for the original array of real numbers, X-pencils
- call p3dfft_get_dims(istart,iend,isize,1)
-
-! Get dimensions for the R2C-forward-transformed array of complex numbers
-!   Z-pencils (depending on how the library was compiled, the first
-!   dimension could be either X or Z)
- call p3dfft_get_dims(fstart,fend,fsize,2)
-
-
- is_pe = istart(1); ie_pe = iend(1)
- js_pe = istart(2); je_pe = iend(2)
- ks_pe = istart(3); ke_pe = iend(3)
- 
-
- if (my_pe==0)  print *,' '
- if (my_pe==0)  print *,'Layout of physical domain decomposition '
- do n=0,n_pes-1
-  call mpi_barrier(MPI_COMM_WORLD, ierr)
-  if (my_pe==n) print*,'PE#',my_pe,': i=',istart(1),':',iend(1), &
-        ' j=',istart(2),':',iend(2),' k=',istart(3),':',iend(3) 
- enddo
- 
- 
- call mpi_barrier(MPI_COMM_WORLD, ierr)
- call flush(6) 
- call mpi_barrier(MPI_COMM_WORLD, ierr)
- 
- if (my_pe==0)  print *,' '
- if (my_pe==0)  print *,'Layout of spectral domain decomposition '
- do n=0,n_pes-1
-  call mpi_barrier(MPI_COMM_WORLD, ierr)
-  if (my_pe==n) print*,'PE#',my_pe,': i=',fstart(1),':',fend(1), &
-        ' j=',fstart(2),':',fend(2),' k=',fstart(3),':',fend(3) 
- enddo
-
- 
- call mpi_barrier(MPI_COMM_WORLD, ierr)
- call flush(6)
- call mpi_barrier(MPI_COMM_WORLD, ierr)
- 
- n_pes_i = 1
- n_pes_j = n_pes_x
- n_pes_k = n_pes_y
-
- if (my_pe==0)  print *,' n_pes_i =',n_pes_i
- if (my_pe==0)  print *,' n_pes_j =',n_pes_j
- if (my_pe==0)  print *,' n_pes_k =',n_pes_k
-
- 
- call mpi_barrier(MPI_COMM_WORLD, ierr)
- call flush(6)
- call mpi_barrier(MPI_COMM_WORLD, ierr)
- 
-  my_blk_i = 1
-  my_blk_j = mod(my_pe,n_pes_j)+1
-  my_blk_k = mod(my_pe/n_pes_j,n_pes_k)+1
-   
- 
- if (my_pe==0)  print *,' '
- do n=0,n_pes-1
-  call mpi_barrier(MPI_COMM_WORLD, ierr)
-  if (my_pe==n) print*,'PE#',my_pe,' my_blk_i=',my_blk_i,' my_blk_j=',my_blk_j,' my_blk_k=',my_blk_k
- enddo
-
-end subroutine p3dfft_initialization
 
 

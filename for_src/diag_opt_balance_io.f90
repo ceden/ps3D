@@ -6,7 +6,7 @@ subroutine init_diag_opt_balance
   implicit none
   include "netcdf.inc"
   integer :: ncid,iret,i,xdim,ydim,zdim,timeid,timedim,id
-  real*8 :: x(nx),y(ny),z(nz)
+  real(real_type) :: x(nx),y(ny),z(nz)
 
   call allocate_module_diag_opt_balance
 
@@ -108,7 +108,7 @@ subroutine write_diag_opt_balance
   integer :: tdimid,ilen,timeid,id
   integer :: tag=1,ist(3),isz(3),ien(3)
   integer, dimension(MPI_STATUS_SIZE) :: Status
-  real*8, allocatable :: a(:,:,:)
+  real(real_type), allocatable :: a(:,:,:)
 
   if (my_pe==0) then
     print*,'writing to file diag_opt_balance.cdf at t=',time

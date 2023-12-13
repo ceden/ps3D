@@ -3,7 +3,7 @@ subroutine diagnose()
  use main_module
  implicit none
  integer  :: i,j,k
- real*8 :: ke,pe,umax,wmax,cfl_h,cfl_v,pecl_h,pecl_v
+ real(real_type) :: ke,pe,umax,wmax,cfl_h,cfl_v,pecl_h,pecl_v
  
  if (my_pe==0) then
      print'(a,f8.2,a,i10)',' diagnosing at t=',time,' itt=',itt
@@ -74,8 +74,8 @@ subroutine init_snap_cdf
  include "mpif.h"
  integer :: ncid,iret,id,xdim,ydim,zdim,tdim,nc_mode,i,j,k
  character :: fname*80,name*32
- real*8, parameter :: spval = -1.0d33
- real*8 :: x(nx),y(ny),z(nz)
+ real(real_type), parameter :: spval = -1.0d33
+ real(real_type) :: x(nx),y(ny),z(nz)
   
  fname = 'snap.cdf' 
  if (my_pe==0)  print*,'preparing file ',fname(1:len_trim(fname))
@@ -169,7 +169,7 @@ subroutine diag_snap
  include "netcdf.inc"
  include "mpif.h"
  integer :: ncid,iret,id,nc_mode,start(4),count(4),ilen,k
- real*8 :: aloc(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+ real(real_type) :: aloc(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
  character :: fname*80
 
  fname = 'snap.cdf' 
@@ -231,7 +231,7 @@ subroutine init_snap_cdf
  implicit none
  include "netcdf.inc"
  integer :: ncid,iret,i,nc_mode,xdim,ydim,zdim,timeid,timedim,id 
- real*8 :: x(nx),y(ny),z(nz)
+ real(real_type) :: x(nx),y(ny),z(nz)
  
  if (my_pe==0) then
  
@@ -326,7 +326,7 @@ subroutine diag_snap
  integer :: tdimid,ilen,timeid,id
  integer :: tag=1,ist(3),isz(3),ien(3)
  integer, dimension(MPI_STATUS_SIZE) :: Status
- real*8, allocatable :: a(:,:,:)
+ real(real_type), allocatable :: a(:,:,:)
 
  if (my_pe==0) then
    print*,'writing to file snap.cdf at t=',time

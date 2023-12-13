@@ -4,9 +4,9 @@ subroutine pressure_solver
  use timing_module   
  implicit none
  integer :: i,j,k
- real*8 :: aloc(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
- real*8 :: a_tri(nz),b_tri(nz),c_tri(nz),fxa
- complex(p3dfft_type) :: bloc(fstart(3):fend(3))
+ real(real_type) :: aloc(is_pe:ie_pe,js_pe:je_pe,ks_pe:ke_pe)
+ real(real_type) :: a_tri(nz),b_tri(nz),c_tri(nz),fxa
+ complex(real_type) :: bloc(fstart(3):fend(3))
  
  call tic('pressure')
  
@@ -133,13 +133,14 @@ subroutine solve_tridiag(a,b,c,d,x,n)
 !        x - the answer
 !        n - number of equations
 !---------------------------------------------------------------------------------
+        integer, parameter :: real_type = KIND(1.d0)
         integer,intent(in) :: n
-        real*8,dimension(n),intent(in) :: a,b,c
-        complex*16,dimension(n),intent(in ) :: d
-        complex*16,dimension(n),intent(out) :: x
-        complex*16,dimension(n) :: dp
-        real*8,dimension(n) :: cp
-        real*8 :: m,fxa
+        real(real_type),dimension(n),intent(in) :: a,b,c
+        complex(real_type),dimension(n),intent(in ) :: d
+        complex(real_type),dimension(n),intent(out) :: x
+        complex(real_type),dimension(n) :: dp
+        real(real_type),dimension(n) :: cp
+        real(real_type) :: m,fxa
         integer i
  
 ! initialize c-prime and d-prime
