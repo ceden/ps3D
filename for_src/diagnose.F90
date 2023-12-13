@@ -66,7 +66,7 @@ end subroutine diagnose
 
 
 subroutine init_snap_cdf
-
+ ! with parallel netcdf
  use main_module
  implicit none
  
@@ -223,10 +223,13 @@ subroutine diag_snap
 
  end subroutine diag_snap
  
-#else # without parallel netcdf
+ 
+ 
+#else 
 
 
 subroutine init_snap_cdf
+ ! without parallel netcdf
  use main_module
  implicit none
  include "netcdf.inc"
