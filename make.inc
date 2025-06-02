@@ -21,13 +21,10 @@ ifdef LEVANTE
  FFTW = /sw/spack-levante/fftw-3.3.10-iynhcf
  cdf = nf-config
  F90 = mpifort
- CDFFLAGS = -I`$(cdf) --includedir`  `$(cdf) --flibs` 
- CDFFLAGS = ${CDFFLAGS} -Wl,-rpath,/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib  
- CDFFLAGS = ${CDFFLAGS} -Dwith_netcdf_parallel
+ CDFFLAGS = -I`$(cdf) --includedir`  `$(cdf) --flibs` -Wl,-rpath,/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib -Dwith_netcdf_parallel
  MPIFLAGS =
  F90FLAGS =
- P3DFFT_FLAGS = -I${P3DFFT}/include  -L${P3DFFT}/lib -lp3dfft 
- P3DFFT_FLAGS = ${P3DFFT_FLAGS} -Wl,-rpath,${FFTW}/lib -L$(FFTW)/lib -lfftw3
+ P3DFFT_FLAGS = -I${P3DFFT}/include  -L${P3DFFT}/lib -lp3dfft -Wl,-rpath,${FFTW}/lib -L$(FFTW)/lib -lfftw3
 endif
 
 
